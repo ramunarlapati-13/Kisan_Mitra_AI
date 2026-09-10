@@ -25,14 +25,18 @@ from flask import Flask, render_template, redirect, url_for, abort
 from config import (FLASK_HOST, FLASK_PORT, FLASK_DEBUG,
                     LOG_FILE, LOG_DIR, LOG_MAX_BYTES, LOG_BACKUP_COUNT,
                     IMAGE_DIR, DB_PATH, BASE_DIR, SECRET_KEY,
-                    FIREBASE_CONFIG, FIREBASE_RTDB_URL, FIREBASE_ENABLED)
+                    FIREBASE_CONFIG, FIREBASE_RTDB_URL, FIREBASE_ENABLED,
+                    SCHEDULER_ENABLED)
 
 # ─── Logging Setup ────────────────────────────────────────────────────────────
 
 def _setup_logging():
-    os.makedirs(LOG_DIR,          exist_ok=True)
-    os.makedirs(IMAGE_DIR,        exist_ok=True)
-    os.makedirs(os.path.join(BASE_DIR, "ai", "model"), exist_ok=True)
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        os.makedirs(IMAGE_DIR, exist_ok=True)
+        os.makedirs(os.path.join(BASE_DIR, "ai", "model"), exist_ok=True)
+    except Exception:
+        pass
 
     fmt     = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     datefmt = "%Y-%m-%d %H:%M:%S"
@@ -40,17 +44,20 @@ def _setup_logging():
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
 
-    # Rotating file handler (5 MB × 3 backups → max 15 MB)
-    fh = logging.handlers.RotatingFileHandler(
-        LOG_FILE, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT
-    )
-    fh.setFormatter(logging.Formatter(fmt, datefmt))
-    root_logger.addHandler(fh)
-
-    # Console handler
+    # Console handler (standard output for Vercel and local terminal)
     ch = logging.StreamHandler()
     ch.setFormatter(logging.Formatter(fmt, datefmt))
     root_logger.addHandler(ch)
+
+    # Rotating file handler (when running on a writable filesystem)
+    try:
+        fh = logging.handlers.RotatingFileHandler(
+            LOG_FILE, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT
+        )
+        fh.setFormatter(logging.Formatter(fmt, datefmt))
+        root_logger.addHandler(fh)
+    except Exception:
+        pass
 
 
 _setup_logging()
@@ -103,7 +110,10 @@ app.register_blueprint(api_bp)
 
 # 6. Scheduler
 from services.scheduler import scheduler
-scheduler.start()
+if SCHEDULER_ENABLED:
+    scheduler.start()
+else:
+    logger.info("[app] Scheduler disabled (serverless environment)")
 
 logger.info("[app] All subsystems initialised — Flask starting")
 

@@ -55,18 +55,31 @@ NORMALIZE_STD  = [0.5, 0.5, 0.5]
 CONFIDENCE_HIGH   = float(os.environ.get("CONFIDENCE_HIGH",   0.80))
 CONFIDENCE_MEDIUM = float(os.environ.get("CONFIDENCE_MEDIUM", 0.60))
 
-# ─── Database ─────────────────────────────────────────────────────────────────
-DB_PATH = os.path.join(BASE_DIR, "database", "crop_assistant.db")
+# ─── Serverless Detection ───────────────────────────────────────────────────
+IS_SERVERLESS = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
 
-# ─── Image Storage ────────────────────────────────────────────────────────────
-IMAGE_DIR           = os.path.join(BASE_DIR, "captured_images")
-MAX_STORED_IMAGES   = int(os.environ.get("MAX_STORED_IMAGES", 500))
+# ─── Database ─────────────────────────────────────────────────────────────────
+if IS_SERVERLESS:
+    import tempfile
+    _tmp = tempfile.gettempdir()
+    DB_PATH = os.environ.get("DB_PATH", os.path.join(_tmp, "crop_assistant.db"))
+    IMAGE_DIR = os.path.join(_tmp, "captured_images")
+    LOG_DIR = os.path.join(_tmp, "logs")
+    LOG_FILE = os.path.join(LOG_DIR, "crop_assistant.log")
+    SCHEDULER_ENABLED = False
+else:
+    DB_PATH = os.path.join(BASE_DIR, "database", "crop_assistant.db")
+    IMAGE_DIR = os.path.join(BASE_DIR, "captured_images")
+    LOG_DIR = os.path.join(BASE_DIR, "logs")
+    LOG_FILE = os.path.join(LOG_DIR, "crop_assistant.log")
+    SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "true").lower() == "true"
+
+MAX_STORED_IMAGES    = int(os.environ.get("MAX_STORED_IMAGES", 500))
 IMAGE_RETENTION_DAYS = int(os.environ.get("IMAGE_RETENTION_DAYS", 30))
 
 # ─── Scheduler ────────────────────────────────────────────────────────────────
 SCHEDULER_INTERVALS   = [15, 30, 60]
 SCHEDULER_DEFAULT_MIN = int(os.environ.get("SCHEDULER_DEFAULT_MIN", 60))
-SCHEDULER_ENABLED     = os.environ.get("SCHEDULER_ENABLED", "true").lower() == "true"
 
 # ─── Camera ───────────────────────────────────────────────────────────────────
 CAMERA_RESOLUTION     = (1920, 1080)   # capture resolution; resized before inference
@@ -74,8 +87,6 @@ CAMERA_WARMUP_SECONDS = 2              # stabilisation time before capture
 CAMERA_JPEG_QUALITY   = 85
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
-LOG_DIR          = os.path.join(BASE_DIR, "logs")
-LOG_FILE         = os.path.join(LOG_DIR, "crop_assistant.log")
 LOG_MAX_BYTES    = 5 * 1024 * 1024    # 5 MB
 LOG_BACKUP_COUNT = 3
 

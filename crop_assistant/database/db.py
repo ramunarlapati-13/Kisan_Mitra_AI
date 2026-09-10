@@ -34,7 +34,10 @@ def init_db() -> bool:
     """
     global _conn
 
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    try:
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    except Exception:
+        pass
 
     try:
         _conn = sqlite3.connect(DB_PATH, check_same_thread=False)

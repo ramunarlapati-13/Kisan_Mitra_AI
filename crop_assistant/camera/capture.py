@@ -27,7 +27,10 @@ from config import (IMAGE_DIR, CAMERA_RESOLUTION, CAMERA_WARMUP_SECONDS,
 logger = logging.getLogger(__name__)
 
 # Ensure image directory exists
-os.makedirs(IMAGE_DIR, exist_ok=True)
+try:
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+except Exception:
+    pass
 
 
 def get_backend() -> str:
