@@ -65,7 +65,10 @@
         <span class="card-subtitle-print">Agronomic Action Plan &amp; Treatment Report</span>
       </div>
       <div class="header-action-group">
-        <button type="button" class="btn-print-report btn-print-header" onclick="window.print()">🖨️ Print Prescription</button>
+        <button type="button" class="btn-listen-speech" id="btn-listen-speech" onclick="speakDossier()" title="Audio Narration in Selected Language" data-i18n="btn_listen">
+          🔊 Listen (Audio)
+        </button>
+        <button type="button" class="btn-print-report btn-print-header" onclick="window.print()" data-i18n="btn_print">🖨️ Print Prescription</button>
         <span class="result-badge badge-{{ prediction.status }}">
           {{ prediction.status|upper }}
         </span>

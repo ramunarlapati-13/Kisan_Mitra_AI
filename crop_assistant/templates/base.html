@@ -27,26 +27,39 @@
     <ul class="nav-links" role="list">
       <li><a href="{{ url_for('index') }}"
              class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
-             id="nav-dashboard">📊 Dashboard</a></li>
+             id="nav-dashboard" data-i18n="nav_dashboard">📊 Dashboard</a></li>
       <li><a href="{{ url_for('analytics') }}"
              class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}"
-             id="nav-analytics">📈 Analytics</a></li>
+             id="nav-analytics" data-i18n="nav_analytics">📈 Analytics</a></li>
       <li><a href="{{ url_for('alerts') }}"
              class="nav-link {% if request.endpoint == 'alerts' %}active{% endif %}"
-             id="nav-alerts">🚨 Alerts</a></li>
+             id="nav-alerts" data-i18n="nav_alerts">🚨 Alerts</a></li>
       <li><a href="{{ url_for('history') }}"
              class="nav-link {% if request.endpoint == 'history' %}active{% endif %}"
-             id="nav-history">📜 History</a></li>
+             id="nav-history" data-i18n="nav_history">📜 History</a></li>
       <li><a href="{{ url_for('settings') }}"
              class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}"
-             id="nav-settings">⚙️ Settings</a></li>
+             id="nav-settings" data-i18n="nav_settings">⚙️ Settings</a></li>
     </ul>
 
     <div class="nav-actions">
+      <!-- Multilingual Customer Language Selector -->
+      <div class="lang-selector-wrap" id="lang-selector-wrap" title="Change Language / भाषा बदलें / భాష మార్చండి">
+        <span class="lang-icon" aria-hidden="true">🌐</span>
+        <select id="lang-select" class="lang-select" onchange="changeLanguage(this.value)" aria-label="Select Language">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="te">తెలుగు (Telugu)</option>
+          <option value="ta">தமிழ் (Tamil)</option>
+          <option value="kn">ಕನ್ನಡ (Kannada)</option>
+          <option value="mr">मराठी (Marathi)</option>
+        </select>
+      </div>
+
       <!-- Live Environmental Status Chip -->
       <div class="env-status-chip" id="nav-env-chip">
         <span class="pulse-indicator" id="nav-env-pulse"></span>
-        <span id="nav-env-status-text">NORMAL</span>
+        <span id="nav-env-status-text" data-i18n="env_normal">NORMAL</span>
       </div>
 
       <div class="nav-status" id="nav-status-bar" aria-live="polite">
@@ -71,11 +84,12 @@
   <footer class="page-footer" role="contentinfo">
     <p><strong>Kisan Mitra AI</strong> &nbsp;·&nbsp; Created by <strong>Circuit Maze Team</strong> as part of <strong>SIH 2026</strong> &nbsp;·&nbsp; Edge AI &amp; IoT Farm Assistant</p>
     <p class="footer-meta">Model: <code>LishaV01/agriculture-crop-disease-detection</code> (Apache-2.0) &nbsp;·&nbsp; Smart India Hackathon 2026</p>
-    <p class="footer-disclaimer">
+    <p class="footer-disclaimer" data-i18n="footer_disclaimer">
       ⚠ AI predictions are decision-support tools only — not a substitute for professional agronomic advice.
     </p>
   </footer>
 
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>

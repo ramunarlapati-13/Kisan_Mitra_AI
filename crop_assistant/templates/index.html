@@ -323,12 +323,15 @@
 
       <div class="result-card-header">
         <div>
-          <h3 class="card-title">Diagnostic Dossier</h3>
-          <span class="card-subtitle-print">Agronomic Action Plan &amp; Treatment Report</span>
+          <h3 class="card-title" data-i18n="dossier_title">Diagnostic Dossier</h3>
+          <span class="card-subtitle-print" data-i18n="dossier_subtitle">Agronomic Action Plan &amp; Treatment Report</span>
         </div>
         {% if latest %}
           <div class="header-action-group">
-            <button type="button" class="btn-print-report btn-print-header" onclick="window.print()">🖨️ Print Report</button>
+            <button type="button" class="btn-listen-speech" id="btn-listen-speech" onclick="speakDossier()" title="Audio Narration in Selected Language" data-i18n="btn_listen">
+              🔊 Listen (Audio)
+            </button>
+            <button type="button" class="btn-print-report btn-print-header" onclick="window.print()" data-i18n="btn_print">🖨️ Print Report</button>
             <span class="result-badge badge-{{ latest.status }}" id="latest-status-badge">
               {{ latest.status|upper }}
             </span>
@@ -388,14 +391,14 @@
           <div class="prescription-box">
             <div class="prescription-header">
               <span class="rx-icon">📋</span>
-              <h4>Agronomic Action Plan &amp; Treatment</h4>
+              <h4 data-i18n="action_plan_title">Agronomic Action Plan &amp; Treatment</h4>
             </div>
 
             <div class="rx-tabs">
-              <button type="button" class="rx-tab-btn active" onclick="switchRxTab('immediate', this)">⚡ Immediate Action</button>
-              <button type="button" class="rx-tab-btn" onclick="switchRxTab('chemical', this)">🧪 Chemical Remedy</button>
-              <button type="button" class="rx-tab-btn" onclick="switchRxTab('organic', this)">🍃 Organic / Bio</button>
-              <button type="button" class="rx-tab-btn" onclick="switchRxTab('prevention', this)">🛡️ Prevention</button>
+              <button type="button" class="rx-tab-btn active" onclick="switchRxTab('immediate', this)" data-i18n="tab_immediate">⚡ Immediate Action</button>
+              <button type="button" class="rx-tab-btn" onclick="switchRxTab('chemical', this)" data-i18n="tab_chemical">🧪 Chemical Remedy</button>
+              <button type="button" class="rx-tab-btn" onclick="switchRxTab('organic', this)" data-i18n="tab_organic">🍃 Organic / Bio</button>
+              <button type="button" class="rx-tab-btn" onclick="switchRxTab('prevention', this)" data-i18n="tab_prevention">🛡️ Prevention</button>
             </div>
 
             <div class="rx-content-pane" id="rx-pane-immediate">
@@ -435,18 +438,18 @@
 
           <!-- Interactive Farmer Checklist -->
           <div class="treatment-checklist">
-            <h5>On-Field Farmer Checklist:</h5>
+            <h5 data-i18n="checklist_title">On-Field Farmer Checklist:</h5>
             <label class="checklist-item">
               <input type="checkbox" onchange="toggleChecklistItem(this)">
-              <span>Inspect neighboring rows for early lesion spots</span>
+              <span data-i18n="checklist_1">Inspect neighboring rows for early lesion spots</span>
             </label>
             <label class="checklist-item">
               <input type="checkbox" onchange="toggleChecklistItem(this)">
-              <span>Prune and incinerate infected foliage</span>
+              <span data-i18n="checklist_2">Prune and incinerate infected foliage</span>
             </label>
             <label class="checklist-item">
               <input type="checkbox" onchange="toggleChecklistItem(this)">
-              <span>Apply recommended protective spray as scheduled</span>
+              <span data-i18n="checklist_3">Apply recommended protective spray as scheduled</span>
             </label>
           </div>
 

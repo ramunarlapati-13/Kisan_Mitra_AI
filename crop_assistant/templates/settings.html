@@ -9,6 +9,33 @@
 
 <div class="settings-grid">
 
+  <!-- Language & Regional Settings -->
+  <div class="card settings-card" id="card-language">
+    <h2 class="card-title">🌐 Language &amp; Regional Preferences / भाषा प्राथमिकता</h2>
+    <div class="settings-form">
+      <p class="settings-desc">
+        Select the customer display language for on-screen dashboards, agronomic action plans, and voice speech assistant.
+      </p>
+
+      <div class="setting-row">
+        <label for="settings-lang-select" class="setting-label">Display &amp; Audio Language</label>
+        <select id="settings-lang-select" class="setting-input" onchange="changeLanguage(this.value)" style="padding: 8px 12px; font-weight: 600;">
+          <option value="en">English (Indian Agricultural Standard)</option>
+          <option value="hi">हिन्दी — Hindi (उत्तर एवं मध्य भारत)</option>
+          <option value="te">తెలుగు — Telugu (ఆంధ్రప్రదేశ్ &amp; తెలంగాణ)</option>
+          <option value="ta">தமிழ் — Tamil (தமிழ்நாடு)</option>
+          <option value="kn">ಕನ್ನಡ — Kannada (ಕರ್ನಾಟಕ)</option>
+          <option value="mr">मराठी — Marathi (महाराष्ट्र)</option>
+        </select>
+      </div>
+
+      <div class="setting-row" style="margin-top: 8px;">
+        <span class="setting-desc">🔊 Speech voice narration for farmers in regional languages.</span>
+        <button type="button" class="btn-listen-speech" onclick="speakDossier()" style="margin-left: auto;">🔊 Test Audio Assistant</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scheduler Settings -->
   <div class="card settings-card" id="card-scheduler">
     <h2 class="card-title">🕐 Automatic Monitoring</h2>
