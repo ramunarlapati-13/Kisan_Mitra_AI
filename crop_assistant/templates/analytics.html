@@ -3,8 +3,16 @@
 
 {% block content %}
 <div class="page-header">
-  <h1 class="page-title">📈 Farm Environmental Analytics &amp; Trends</h1>
-  <p class="page-subtitle">Realtime &amp; historical telemetry collected from ESP32 DevKit V1 sensors</p>
+  <div>
+    <h1 class="page-title">📈 Farm Environmental Analytics &amp; Trends</h1>
+    <p class="page-subtitle">Realtime &amp; historical telemetry collected from ESP32 DevKit V1 sensors</p>
+  </div>
+  <div class="firebase-sync-badge" id="firebase-sync-badge" title="Firebase Realtime Database live state">
+    <span class="fb-pulse {% if 'firebase' in (sensors.source|lower) %}active{% endif %}" id="fb-pulse"></span>
+    <span class="fb-text">Firebase RTDB:</span>
+    <span class="fb-status" id="fb-status-val">{{ 'CONNECTED (LIVE)' if 'firebase' in (sensors.source|lower) else 'READY' }}</span>
+    <button type="button" class="btn-fb-sync" onclick="forceFirebaseSync()" title="Force refresh from Firebase RTDB">🔄 Sync</button>
+  </div>
 </div>
 
 <!-- Time Range Selector -->
@@ -37,9 +45,9 @@
       <canvas id="chart-temp-hum" height="220"></canvas>
     </div>
     <div class="chart-footer-stats">
-      <div class="footer-stat">Avg Temp: <strong>{{ sensors.temperature }}°C</strong></div>
-      <div class="footer-stat">Peak Temp: <strong>{{ '%.1f'|format(sensors.temperature + 3.2) }}°C</strong></div>
-      <div class="footer-stat">Avg Humidity: <strong>{{ sensors.humidity }}%</strong></div>
+      <div class="footer-stat">Current Temp: <strong id="stat-avg-temp">{{ sensors.temperature }}°C</strong></div>
+      <div class="footer-stat">Peak Temp: <strong id="stat-peak-temp">{{ '%.1f'|format(sensors.temperature + 3.2) }}°C</strong></div>
+      <div class="footer-stat">Current Humidity: <strong id="stat-avg-hum">{{ sensors.humidity }}%</strong></div>
     </div>
   </div>
 
@@ -59,8 +67,8 @@
       <canvas id="chart-soil-relay" height="220"></canvas>
     </div>
     <div class="chart-footer-stats">
-      <div class="footer-stat">Current Moisture: <strong>{{ sensors.soilMoisture }}%</strong></div>
-      <div class="footer-stat">Relay Status: <strong>{{ 'ACTIVE' if sensors.relay else 'OFF' }}</strong></div>
+      <div class="footer-stat">Current Moisture: <strong id="stat-soil-moist">{{ sensors.soilMoisture }}%</strong></div>
+      <div class="footer-stat">Relay Status: <strong id="stat-relay-status">{{ 'ACTIVE' if sensors.relay else 'OFF' }}</strong></div>
       <div class="footer-stat">Target Range: <strong>40% - 70%</strong></div>
     </div>
   </div>
@@ -81,8 +89,8 @@
       <canvas id="chart-gas" height="220"></canvas>
     </div>
     <div class="chart-footer-stats">
-      <div class="footer-stat">Current Level: <strong>{{ sensors.gasRaw }} ADC</strong></div>
-      <div class="footer-stat">Safety Status: <strong>{{ 'SAFE' if not sensors.gasDanger else 'DANGER' }}</strong></div>
+      <div class="footer-stat">Current Level: <strong id="stat-gas-val">{{ sensors.gasRaw }} ADC</strong></div>
+      <div class="footer-stat">Safety Status: <strong id="stat-gas-status">{{ 'SAFE' if not sensors.gasDanger else 'DANGER' }}</strong></div>
     </div>
   </div>
 
@@ -121,7 +129,7 @@
         <th>Status</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="telemetry-table-body">
       {% for row in sensor_history[-10:]|reverse %}
         <tr>
           <td>{{ row.time }}</td>
@@ -320,6 +328,134 @@ function exportCSV() {
 }
 
 window.addEventListener('resize', initCharts);
-document.addEventListener('DOMContentLoaded', initCharts);
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+
+  // Polling fallback to keep analytics synced even if WebSockets are blocked
+  setInterval(() => {
+    fetch('/api/status')
+      .then(r => r.json())
+      .then(res => {
+        if (res && res.sensors) {
+          updateLiveAnalytics(res.sensors);
+        }
+      })
+      .catch(() => {});
+  }, 4000);
+});
+
+function forceFirebaseSync() {
+  showToast('Connecting to Firebase RTDB…', 'success', 2000);
+  fetch('/api/firebase/sync', { method: 'POST' })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success && res.data) {
+        showToast('✓ Synced with Firebase RTDB live data', 'success');
+        updateLiveAnalytics(res.data);
+      } else {
+        showToast(res.message || 'Firebase RTDB returned no data', 'warning');
+      }
+    })
+    .catch(() => showToast('Could not reach server to sync Firebase', 'error'));
+}
+
+function updateLiveAnalytics(val) {
+  if (!val) return;
+
+  // 1. Update Stat Numbers
+  const tempEl = document.getElementById('stat-avg-temp');
+  if (tempEl && val.temperature !== undefined) tempEl.textContent = val.temperature + '°C';
+
+  const peakEl = document.getElementById('stat-peak-temp');
+  if (peakEl && val.temperature !== undefined) peakEl.textContent = (parseFloat(val.temperature) + 3.2).toFixed(1) + '°C';
+
+  const humEl = document.getElementById('stat-avg-hum');
+  if (humEl && val.humidity !== undefined) humEl.textContent = val.humidity + '%';
+
+  const soilEl = document.getElementById('stat-soil-moist');
+  if (soilEl && val.soilMoisture !== undefined) soilEl.textContent = val.soilMoisture + '%';
+
+  const relayEl = document.getElementById('stat-relay-status');
+  if (relayEl && val.relay !== undefined) relayEl.textContent = val.relay ? 'ACTIVE' : 'OFF';
+
+  const gasEl = document.getElementById('stat-gas-val');
+  if (gasEl && val.gasRaw !== undefined) gasEl.textContent = val.gasRaw + ' ADC';
+
+  const gasStatEl = document.getElementById('stat-gas-status');
+  if (gasStatEl) gasStatEl.textContent = val.gasDanger ? 'DANGER' : 'SAFE';
+
+  // 2. Update Badge
+  const pulse = document.getElementById('fb-pulse');
+  if (pulse) pulse.classList.add('active');
+  const statusEl = document.getElementById('fb-status-val');
+  if (statusEl) statusEl.textContent = 'CONNECTED (LIVE)';
+
+  // 3. Append to historyData & re-render charts
+  const timeStr = val.timestamp ? (val.timestamp.length > 18 ? val.timestamp.slice(11, 19) : val.timestamp) : new Date().toLocaleTimeString();
+  historyData.push({
+    time: timeStr,
+    temperature: parseFloat(val.temperature) || 0,
+    humidity: parseFloat(val.humidity) || 0,
+    soilMoisture: parseFloat(val.soilMoisture) || 0,
+    gasRaw: parseInt(val.gasRaw) || 0,
+    relay: val.relay ? 1 : 0,
+    danger: val.danger ? 1 : 0
+  });
+  if (historyData.length > 50) historyData.shift();
+  initCharts();
+
+  // 4. Prepend row to telemetry table
+  const tbody = document.getElementById('telemetry-table-body');
+  if (tbody) {
+    const tr = document.createElement('tr');
+    tr.className = 'live-telemetry-row';
+    tr.innerHTML = `
+      <td>${timeStr}</td>
+      <td>${val.temperature}°C</td>
+      <td>${val.humidity}%</td>
+      <td>${val.soilMoisture}%</td>
+      <td>${val.gasRaw}</td>
+      <td><span class="mini-badge ${val.relay ? 'badge-healthy' : 'badge-offline'}">${val.relay ? 'ON' : 'OFF'}</span></td>
+      <td><span class="mini-badge ${val.danger ? 'badge-diseased' : 'badge-healthy'}">${val.danger ? 'DANGER' : 'NORMAL'}</span></td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+    if (tbody.children.length > 12) tbody.removeChild(tbody.lastChild);
+  }
+}
+</script>
+
+<!-- Firebase RTDB Client Configuration & Realtime Sync -->
+<script id="firebase-config-data" type="application/json">
+  {{ firebase_config|tojson if firebase_config else '{}' }}
+</script>
+<script>
+  window.FIREBASE_CONFIG = (function() {
+    try {
+      var el = document.getElementById('firebase-config-data');
+      return el ? JSON.parse(el.textContent) : {};
+    } catch(e) { return {}; }
+  })();
+  window.FIREBASE_URL = "{{ firebase_url }}";
+  window.FIREBASE_ENABLED = "{{ 'true' if firebase_enabled else 'false' }}" === "true";
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  if (window.FIREBASE_ENABLED && typeof firebase !== 'undefined' && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+      }
+      const rtdb = firebase.database();
+      rtdb.ref('agriculture/current').on('value', snap => {
+        const val = snap.val();
+        if (val) updateLiveAnalytics(val);
+      }, err => {
+        console.warn('Firebase RTDB analytics live listener note:', err);
+      });
+    } catch (e) {
+      console.warn('Firebase RTDB analytics init note:', e);
+    }
+  }
 </script>
 {% endblock %}

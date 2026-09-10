@@ -169,7 +169,10 @@ def analytics():
                            stats=stats,
                            sensors=sensors,
                            sensor_history=history,
-                           recent=recent)
+                           recent=recent,
+                           firebase_config=FIREBASE_CONFIG,
+                           firebase_url=FIREBASE_RTDB_URL,
+                           firebase_enabled=FIREBASE_ENABLED)
 
 
 @app.route("/alerts")
@@ -183,7 +186,10 @@ def alerts():
 
     return render_template("alerts.html",
                            sensors=sensors,
-                           latest=latest_pred)
+                           latest=latest_pred,
+                           firebase_config=FIREBASE_CONFIG,
+                           firebase_url=FIREBASE_RTDB_URL,
+                           firebase_enabled=FIREBASE_ENABLED)
 
 
 @app.route("/history")

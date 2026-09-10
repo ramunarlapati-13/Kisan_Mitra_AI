@@ -8,6 +8,7 @@ Fully offline. Thread-safe via check_same_thread=False + manual locking.
 
 import os
 import sqlite3
+import json
 import logging
 import threading
 from datetime import datetime, timedelta
@@ -49,6 +50,34 @@ def init_db() -> bool:
             schema = f.read()
         _conn.executescript(schema)
         _conn.commit()
+
+        # Seed predictions if local scans are missing (e.g. fresh ephemeral database on Vercel)
+        try:
+            cursor = _conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM predictions WHERE id = 21")
+            if cursor.fetchone()[0] == 0:
+                seed_file = os.path.join(os.path.dirname(__file__), "seed_scans.json")
+                if os.path.isfile(seed_file):
+                    with open(seed_file, "r", encoding="utf-8") as sf:
+                        seeds = json.load(sf)
+                    for r in seeds:
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO predictions (
+                                id, timestamp, image_path, crop, disease,
+                                confidence, confidence_level, raw_label,
+                                model_version, inference_time_ms, image_quality,
+                                notes, status, mode
+                            ) VALUES (
+                                :id, :timestamp, :image_path, :crop, :disease,
+                                :confidence, :confidence_level, :raw_label,
+                                :model_version, :inference_time_ms, :image_quality,
+                                :notes, :status, :mode
+                            )
+                        """, r)
+                    _conn.commit()
+                    logger.info(f"[db] Successfully seeded {len(seeds)} historical crop scans into database")
+        except Exception as seed_err:
+            logger.warning(f"[db] Seed check note: {seed_err}")
 
         logger.info(f"[db] Database initialised at {DB_PATH}")
         return True

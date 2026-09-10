@@ -83,9 +83,19 @@ class SensorService:
 
     def get_current(self) -> dict:
         """Get snapshot of current environmental parameters."""
+        if FIREBASE_ENABLED and FIREBASE_RTDB_URL:
+            now = time.time()
+            if not self._last_firebase_fetch or (now - self._last_firebase_fetch > 4):
+                try:
+                    fb_data = self._fetch_firebase()
+                    if fb_data:
+                        self._update_from_firebase(fb_data)
+                except Exception:
+                    pass
+
         with self._lock:
             # If Firebase has been recently active
-            if self._last_firebase_fetch and (time.time() - self._last_firebase_fetch < 15):
+            if self._last_firebase_fetch and (time.time() - self._last_firebase_fetch < 30):
                 self._current["source"] = "firebase-rtdb"
             elif self._last_esp32_push and (time.time() - self._last_esp32_push < 45):
                 self._current["source"] = "esp32"
