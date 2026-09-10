@@ -1,0 +1,22 @@
+# Raspberry Pi Zero W Runtime Dependencies
+# Install: pip install -r requirements-pi.txt
+#
+# NOTE: tflite-runtime must be installed from a pre-built ARMv6 wheel.
+# Full TensorFlow is NOT suitable for Pi Zero W (ARMv6, 512MB RAM).
+#
+# ARMv6 tflite-runtime wheel (Python 3.9):
+# pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_armv6l.whl
+#
+# Or search: https://github.com/feranick/TFlite-builds/releases
+# for a compatible ARMv6 wheel for your Python version.
+
+flask>=2.3.0
+pillow>=9.5.0
+requests>=2.28.0
+
+# Camera (installed via apt on Pi, not pip):
+# sudo apt install -y python3-picamera2
+# OR: pip install picamera2  (if pip version available)
+
+# tflite-runtime -- install manually from ARMv6 wheel (see above)
+# DO NOT: pip install tensorflow  (too large for Pi Zero W)

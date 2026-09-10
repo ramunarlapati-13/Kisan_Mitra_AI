@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Alerts Center — Kisan Mitra AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">🚨 Real-time Farm Alerts Center</h1>
+  <p class="page-subtitle">Critical environmental hazards, irrigation warnings, and crop disease notifications</p>
+</div>
+
+<!-- Alerts Overview Cards -->
+<div class="alerts-summary-grid">
+  <div class="card alert-summary-card critical">
+    <div class="summary-count" id="count-critical">0</div>
+    <div class="summary-label">Critical Hazards</div>
+  </div>
+  <div class="card alert-summary-card warning">
+    <div class="summary-count" id="count-warning">1</div>
+    <div class="summary-label">Warnings</div>
+  </div>
+  <div class="card alert-summary-card info">
+    <div class="summary-count" id="count-info">2</div>
+    <div class="summary-label">System Notices</div>
+  </div>
+</div>
+
+<!-- Active Alerts Feed -->
+<div class="card alerts-feed-card">
+  <div class="card-header">
+    <h2 class="card-title">Live Alert Feed</h2>
+    <div class="alert-filter-chips">
+      <button type="button" class="filter-chip active" onclick="filterAlerts('ALL', this)">All</button>
+      <button type="button" class="filter-chip" onclick="filterAlerts('CRITICAL', this)">Critical</button>
+      <button type="button" class="filter-chip" onclick="filterAlerts('WARNING', this)">Warning</button>
+    </div>
+  </div>
+
+  <div class="alerts-list" id="alerts-list">
+    <!-- Dynamic items rendered via JS & fallback server items -->
+    {% if sensors.temperatureDanger %}
+      <div class="alert-item critical">
+        <div class="alert-item-icon">🔥</div>
+        <div class="alert-item-content">
+          <div class="alert-item-title">
+            <strong>HIGH AMBIENT TEMPERATURE</strong>
+            <span class="alert-badge-pill pill-critical">CRITICAL</span>
+            <span class="alert-time">{{ sensors.timestamp[-8:] if sensors.timestamp else 'Just now' }}</span>
+          </div>
+          <p class="alert-msg">Ambient temperature reached {{ sensors.temperature }}°C (Danger limit: &ge; 35°C). Risk of foliar scorch and moisture stress.</p>
+          <div class="alert-action-rec">Recommendation: Increase shade netting coverage and verify drip line pressure.</div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if sensors.humidityDanger %}
+      <div class="alert-item warning">
+        <div class="alert-item-icon">🌵</div>
+        <div class="alert-item-content">
+          <div class="alert-item-title">
+            <strong>LOW CANOPY HUMIDITY</strong>
+            <span class="alert-badge-pill pill-warning">WARNING</span>
+            <span class="alert-time">{{ sensors.timestamp[-8:] if sensors.timestamp else 'Just now' }}</span>
+          </div>
+          <p class="alert-msg">Relative humidity dropped to {{ sensors.humidity }}% (&le; 30%). Potential crop desiccation.</p>
+          <div class="alert-action-rec">Recommendation: Apply micro-misting if available to restore humidity.</div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if sensors.soilDry %}
+      <div class="alert-item warning">
+        <div class="alert-item-icon">🚰</div>
+        <div class="alert-item-content">
+          <div class="alert-item-title">
+            <strong>SOIL MOISTURE DEFICIT</strong>
+            <span class="alert-badge-pill pill-warning">WARNING</span>
+            <span class="alert-time">{{ sensors.timestamp[-8:] if sensors.timestamp else 'Just now' }}</span>
+          </div>
+          <p class="alert-msg">Soil moisture at {{ sensors.soilMoisture }}% (&lt; 30%). Irrigation relay is automated to restore optimal hydration.</p>
+          <div class="alert-action-rec">Recommendation: Keep automated irrigation active until soil reaches &gt; 50%.</div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if latest and latest.status == 'diseased' %}
+      <div class="alert-item high">
+        <div class="alert-item-icon">🔬</div>
+        <div class="alert-item-content">
+          <div class="alert-item-title">
+            <strong>CROP DISEASE DETECTED: {{ latest.crop|upper }} ({{ latest.disease|upper }})</strong>
+            <span class="alert-badge-pill pill-high">HIGH</span>
+            <span class="alert-time">{{ latest.timestamp[-8:] if latest.timestamp else 'Recent' }}</span>
+          </div>
+          <p class="alert-msg">AI model identified {{ latest.disease }} with {{ '%.0f'|format((latest.confidence or 0)*100) }}% confidence on scan #{{ latest.id }}.</p>
+          <div class="alert-action-rec">Recommendation: Review the agronomic prescription in diagnostic dossier #{{ latest.id }}.</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Normal status item if no hazards -->
+    {% if not sensors.danger and not sensors.soilDry and (not latest or latest.status == 'healthy') %}
+      <div class="alert-item normal">
+        <div class="alert-item-icon">✓</div>
+        <div class="alert-item-content">
+          <div class="alert-item-title">
+            <strong>ALL FARM ENVIRONMENTAL METRICS OPTIMAL</strong>
+            <span class="alert-badge-pill pill-normal">NORMAL</span>
+          </div>
+          <p class="alert-msg">Sensors indicate balanced temperature ({{ sensors.temperature }}°C), humidity ({{ sensors.humidity }}%), and adequate soil hydration ({{ sensors.soilMoisture }}%).</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterAlerts(severity, btn) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const items = document.querySelectorAll('.alert-item');
+  items.forEach(item => {
+    if (severity === 'ALL') {
+      item.classList.remove('d-none');
+    } else if (severity === 'CRITICAL') {
+      if (item.classList.contains('critical')) item.classList.remove('d-none');
+      else item.classList.add('d-none');
+    } else if (severity === 'WARNING') {
+      if (item.classList.contains('warning') || item.classList.contains('high')) item.classList.remove('d-none');
+      else item.classList.add('d-none');
+    }
+  });
+}
+</script>
+{% endblock %}

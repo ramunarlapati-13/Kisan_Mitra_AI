@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Diagnostic Dossier #{{ prediction.id }} — Kisan Mitra AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('index') }}" class="back-link" id="back-dashboard">&larr; Dashboard</a>
+  <h1 class="page-title">Diagnostic Dossier &amp; Action Plan</h1>
+  <span class="page-subtitle">Scan ID #{{ prediction.id }}</span>
+</div>
+
+<div class="detail-grid">
+
+  <!-- Left: High-Res Crop Image with Heatmap Inspector -->
+  <div class="card detail-image-card" id="detail-image-card">
+    <div class="image-inspector-container">
+      {% if prediction.image_path and prediction.image_filename %}
+        <img src="/captured_images/{{ prediction.image_filename }}"
+             alt="Captured crop leaf image for scan #{{ prediction.id }}"
+             class="detail-image" id="detail-image"
+             onerror="this.parentElement.innerHTML='<div class=\'result-image-placeholder\'><span>📷</span><p>Image not found</p></div>'">
+        <div class="heatmap-overlay d-none" id="detail-heatmap-overlay"></div>
+      {% else %}
+        <div class="result-image-placeholder">
+          <span>📷</span>
+          <p>Image data archived</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="image-inspector-toolbar">
+      <button type="button" class="btn-heatmap-toggle" onclick="toggleDetailHeatmap()">
+        🔍 Toggle AI Symptom Heatmap
+      </button>
+      <button type="button" class="btn-print-report" onclick="window.print()">
+        🖨️ Print Prescription
+      </button>
+    </div>
+  </div>
+
+  <!-- Right: Diagnostic Details & Agronomic Prescription -->
+  <div class="card detail-info-card" id="detail-info-card">
+    <div class="dossier-card-top">
+      <h2 class="card-title">Botanical Pathogen Dossier</h2>
+      <span class="result-badge badge-{{ prediction.status }}">
+        {{ prediction.status|upper }}
+      </span>
+    </div>
+
+    <!-- Main Crop & Disease Heading -->
+    <div class="dossier-diagnosis-header">
+      <div class="diag-crop">{{ prediction.crop or 'Crop Plant' }}</div>
+      <div class="diag-disease">{{ prediction.disease or 'Healthy Foliage' }}</div>
+      <div class="diag-pathogen">{{ dossier.pathogen if dossier else 'None' }}</div>
+    </div>
+
+    <!-- Confidence Meter -->
+    <div class="confidence-bar-wrap confidence-bar-wrap--detail">
+      <div class="confidence-bar-track">
+        <div class="confidence-bar-fill conf-bar-{{ prediction.confidence_level }} conf-bar-var"
+             data-conf-w="{{ '%.1f'|format((prediction.confidence or 0)*100) }}"></div>
+      </div>
+      <span class="confidence-bar-label">
+        {{ '%.1f'|format((prediction.confidence or 0)*100) }}% Confidence
+        ({{ prediction.confidence_level|capitalize if prediction.confidence_level else '—' }})
+      </span>
+    </div>
+
+    <!-- Symptoms Breakdown -->
+    {% if dossier and dossier.symptoms %}
+      <div class="dossier-section">
+        <h4 class="dossier-subheading">🌿 Observed Symptoms:</h4>
+        <div class="dossier-bullet-list">
+          {% for s in dossier.symptoms %}
+            <div class="dossier-bullet-item">&bull; {{ s }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Immediate Action -->
+    {% if dossier and dossier.immediate_action %}
+      <div class="recommendation rec-spaced">
+        <span class="rec-icon">⚡</span>
+        <div>
+          <strong>Immediate Farm Action:</strong><br>
+          {{ dossier.immediate_action }}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Prescription Tabs -->
+    {% if dossier and prediction.status == 'diseased' %}
+      <div class="prescription-box">
+        <div class="rx-header">
+          <span class="rx-icon">🧪</span>
+          <strong>Treatment Prescriptions:</strong>
+        </div>
+        <div class="rx-tabs">
+          <button type="button" class="rx-tab-btn active" onclick="switchDetailTab('chem', this)">Chemical</button>
+          <button type="button" class="rx-tab-btn" onclick="switchDetailTab('org', this)">Organic / Bio</button>
+          <button type="button" class="rx-tab-btn" onclick="switchDetailTab('prev', this)">Prevention</button>
+        </div>
+
+        <div class="rx-pane" id="detail-pane-chem">
+          <div class="rx-grid-2">
+            <div><strong>Fungicide / Spray:</strong> {{ dossier.chemical_treatment.fungicide if dossier.chemical_treatment else 'Azoxystrobin or Mancozeb' }}</div>
+            <div><strong>Dosage:</strong> {{ dossier.chemical_treatment.dosage if dossier.chemical_treatment else '2.0 g/L' }}</div>
+            <div><strong>Application:</strong> {{ dossier.chemical_treatment.interval if dossier.chemical_treatment else 'Spray at 10-day intervals' }}</div>
+          </div>
+        </div>
+
+        <div class="rx-pane d-none" id="detail-pane-org">
+          <div class="rx-grid-2">
+            <div><strong>Organic Remedy:</strong> {{ dossier.organic_treatment.remedy if dossier.organic_treatment else 'Neem Oil (0.5%) + Trichoderma' }}</div>
+            <div><strong>Dosage:</strong> {{ dossier.organic_treatment.dosage if dossier.organic_treatment else '5 ml/L' }}</div>
+            <div><strong>Notes:</strong> {{ dossier.organic_treatment.notes if dossier.organic_treatment else 'Safe for pollinators' }}</div>
+          </div>
+        </div>
+
+        <div class="rx-pane d-none" id="detail-pane-prev">
+          <div class="dossier-bullet-list">
+            {% if dossier.prevention %}
+              {% for p in dossier.prevention %}
+                <div class="dossier-bullet-item">&bull; {{ p }}</div>
+              {% endfor %}
+            {% else %}
+              <div class="dossier-bullet-item">&bull; Maintain clean irrigation and proper row spacing.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Technical metadata grid -->
+    <div class="detail-dl" id="detail-dl">
+      <div class="detail-row">
+        <span class="detail-key">Severity Level</span>
+        <span class="detail-val"><strong>{{ dossier.severity if dossier else 'OPTIMAL' }}</strong></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Crop Health Score</span>
+        <span class="detail-val"><strong>{{ dossier.health_score if dossier else '95' }} / 100</strong></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Capture Timestamp</span>
+        <span class="detail-val">{{ prediction.timestamp or '—' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Inference Time</span>
+        <span class="detail-val">{{ '%.1f'|format(prediction.inference_time_ms) if prediction.inference_time_ms else '—' }} ms</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Model Mode</span>
+        <span class="detail-val"><code>{{ prediction.mode or 'tflite' }}</code></span>
+      </div>
+    </div>
+
+    <!-- AI disclaimer -->
+    <div class="disclaimer-box" id="disclaimer-box">
+      <strong>⚠ Notice:</strong> AI predictions are agricultural decision-support tools.
+      Verify with local agricultural extension officers before large-scale pesticide applications.
+    </div>
+
+    <!-- Navigation -->
+    <div class="detail-nav">
+      {% if prediction.id and prediction.id > 1 %}
+        <a href="/image/{{ prediction.id - 1 }}" class="btn-nav" id="btn-prev-pred">&larr; Previous Scan</a>
+      {% endif %}
+      <a href="{{ url_for('index') }}" class="btn-nav" id="btn-dashboard">Dashboard</a>
+      <a href="{{ url_for('history') }}" class="btn-nav" id="btn-history-link">All History</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleDetailHeatmap() {
+  const overlay = document.getElementById('detail-heatmap-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('d-none');
+}
+
+function switchDetailTab(type, btn) {
+  document.querySelectorAll('.rx-tabs .rx-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.getElementById('detail-pane-chem').classList.add('d-none');
+  document.getElementById('detail-pane-org').classList.add('d-none');
+  document.getElementById('detail-pane-prev').classList.add('d-none');
+
+  const target = document.getElementById('detail-pane-' + type);
+  if (target) target.classList.remove('d-none');
+}
+</script>
+{% endblock %}

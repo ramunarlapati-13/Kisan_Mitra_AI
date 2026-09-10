@@ -1,2 +1,11 @@
-crop_assistant/.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 .env
+crop_assistant/.env
+crop_assistant/logs/*.log
+crop_assistant/captured_images/*.jpg
+crop_assistant/database/*.db
+crop_assistant/database/*.db-shm
+crop_assistant/database/*.db-wal

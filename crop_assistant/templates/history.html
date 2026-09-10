@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Scan History — Kisan Mitra AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Prediction History</h1>
+  <span class="page-subtitle">{{ pagination.total }} total analyses</span>
+</div>
+
+<!-- Filter Bar -->
+<div class="card filter-card" id="filter-card">
+  <form class="filter-form" method="GET" action="{{ url_for('history') }}" id="filter-form">
+    <div class="filter-group">
+      <label for="filter-crop" class="filter-label">Crop</label>
+      <select name="crop" id="filter-crop" class="filter-select">
+        <option value="">All Crops</option>
+        {% for crop in ['Corn', 'Potato', 'Rice', 'Wheat', 'Sugarcane'] %}
+          <option value="{{ crop }}" {% if crop_filter == crop %}selected{% endif %}>{{ crop }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-status" class="filter-label">Status</label>
+      <select name="status" id="filter-status" class="filter-select">
+        <option value="">All</option>
+        <option value="healthy"  {% if status_filter == 'healthy'  %}selected{% endif %}>Healthy</option>
+        <option value="diseased" {% if status_filter == 'diseased' %}selected{% endif %}>Diseased</option>
+        <option value="uncertain"{% if status_filter == 'uncertain'%}selected{% endif %}>Uncertain</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-filter" id="btn-filter">Filter</button>
+    {% if crop_filter or status_filter %}
+      <a href="{{ url_for('history') }}" class="btn-clear" id="btn-clear">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Table -->
+<div class="card" id="history-card">
+  {% if predictions %}
+    <div class="table-wrap">
+      <table class="data-table" id="history-table" role="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Timestamp</th>
+            <th scope="col">Crop</th>
+            <th scope="col">Disease</th>
+            <th scope="col">Status</th>
+            <th scope="col">Confidence</th>
+            <th scope="col">Inference</th>
+            <th scope="col">Image</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in predictions %}
+          <tr class="table-row {% if p.status == 'healthy' %}row-healthy{% elif p.status == 'diseased' %}row-diseased{% endif %}">
+            <td class="td-id">{{ p.id }}</td>
+            <td class="td-time">{{ p.timestamp[:16].replace('T',' ') if p.timestamp else '—' }}</td>
+            <td class="td-crop">{{ p.crop or '—' }}</td>
+            <td class="td-disease">{{ p.disease or '—' }}</td>
+            <td class="td-status">
+              {% if p.status == 'healthy' %}
+                <span class="mini-badge badge-healthy">Healthy</span>
+              {% elif p.status == 'diseased' %}
+                <span class="mini-badge badge-diseased">Diseased</span>
+              {% else %}
+                <span class="mini-badge badge-uncertain">{{ p.status|capitalize }}</span>
+              {% endif %}
+            </td>
+            <td class="td-conf">
+              <div class="mini-conf-bar">
+                <div class="mini-conf-fill conf-bar-{{ p.confidence_level }} conf-bar-var"
+                     data-conf-w="{{ '%.0f'|format((p.confidence or 0)*100) }}"></div>
+              </div>
+              {{ '%.0f'|format((p.confidence or 0)*100) }}%
+            </td>
+            <td class="td-infer">
+              {% if p.inference_time_ms %}
+                {{ '%.0f'|format(p.inference_time_ms) }} ms
+              {% else %}—{% endif %}
+            </td>
+            <td class="td-img">
+              {% if p.id %}
+                <a href="/image/{{ p.id }}" class="img-link" id="hist-img-{{ p.id }}">View</a>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination" id="pagination" role="navigation" aria-label="Page navigation">
+      {% if pagination.page > 1 %}
+        <a href="?page={{ pagination.page - 1 }}{% if crop_filter %}&crop={{ crop_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+           class="page-btn" id="page-prev">← Prev</a>
+      {% endif %}
+
+      {% for pg in range(1, pagination.pages + 1) %}
+        {% if pg == pagination.page %}
+          <span class="page-btn page-current" aria-current="page">{{ pg }}</span>
+        {% elif pg == 1 or pg == pagination.pages or (pg >= pagination.page - 2 and pg <= pagination.page + 2) %}
+          <a href="?page={{ pg }}{% if crop_filter %}&crop={{ crop_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+             class="page-btn" id="page-{{ pg }}">{{ pg }}</a>
+        {% elif pg == pagination.page - 3 or pg == pagination.page + 3 %}
+          <span class="page-ellipsis">…</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.page < pagination.pages %}
+        <a href="?page={{ pagination.page + 1 }}{% if crop_filter %}&crop={{ crop_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+           class="page-btn" id="page-next">Next →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="result-empty">
+      <div class="empty-icon">📋</div>
+      <p class="empty-title">No predictions found</p>
+      <p class="empty-sub">
+        {% if crop_filter or status_filter %}
+          No results match the current filter. <a href="{{ url_for('history') }}">Clear filters</a>
+        {% else %}
+          Run your first analysis from the <a href="{{ url_for('index') }}">Dashboard</a>.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

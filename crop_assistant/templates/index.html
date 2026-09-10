@@ -1,0 +1,581 @@
+{% extends "base.html" %}
+{% block title %}Kisan Mitra AI — Smart Agriculture &amp; Crop Disease Detection{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════════════
+     TOP HERO BAR: Environmental Safety Status & Quick Health
+══════════════════════════════════════════════════════════════ -->
+<section class="env-safety-banner env-safety-{{ sensors.status|lower }}" id="env-safety-banner">
+  <div class="safety-indicator-group">
+    <div class="safety-icon-wrap" id="safety-icon">
+      {% if sensors.status == 'DANGER' %}🚨{% elif sensors.status == 'WARNING' %}⚠️{% else %}🛡️{% endif %}
+    </div>
+    <div class="safety-text-group">
+      <div class="safety-header-line">
+        <span class="safety-label">ENVIRONMENTAL SAFETY:</span>
+        <span class="safety-badge badge-{{ sensors.status|lower }}" id="env-status-badge">{{ sensors.status }}</span>
+        <span class="safety-timestamp" id="env-timestamp">Updated {{ sensors.timestamp[-8:] if sensors.timestamp else 'Just now' }}</span>
+      </div>
+      <div class="safety-checks" id="env-safety-checks">
+        <span class="check-item {% if sensors.temperatureDanger %}check-danger{% else %}check-ok{% endif %}" id="chk-temp">
+          {{ '⚠️ High Temp (' ~ sensors.temperature ~ '°C)' if sensors.temperatureDanger else '✓ Temperature Normal (' ~ sensors.temperature ~ '°C)' }}
+        </span>
+        <span class="check-item {% if sensors.humidityDanger %}check-danger{% else %}check-ok{% endif %}" id="chk-hum">
+          {{ '⚠️ Low Humidity (' ~ sensors.humidity ~ '%)' if sensors.humidityDanger else '✓ Humidity Safe (' ~ sensors.humidity ~ '%)' }}
+        </span>
+        <span class="check-item {% if sensors.gasDanger %}check-danger{% else %}check-ok{% endif %}" id="chk-gas">
+          {{ '⚠️ Elevated Gas (' ~ sensors.gasRaw ~ ' ADC)' if sensors.gasDanger else '✓ Gas Level Safe (' ~ sensors.gasRaw ~ ' ADC)' }}
+        </span>
+        <span class="check-item {% if sensors.soilDry %}check-warn{% else %}check-ok{% endif %}" id="chk-soil">
+          {{ '⚠️ Soil Moisture Low (' ~ sensors.soilMoisture ~ '%)' if sensors.soilDry else '✓ Soil Moisture Adequate (' ~ sensors.soilMoisture ~ '%)' }}
+        </span>
+        <span class="check-item {% if sensors.led == 'ON' %}check-warn{% else %}check-ok{% endif %}" id="chk-led">
+          {{ '⚠️ Alert LED Active' if sensors.led == 'ON' else '✓ Alert LED Standby' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="irrigation-quick-badge {% if sensors.relay %}active{% endif %}" id="irrigation-quick-badge">
+    <span class="irrigation-pulse"></span>
+    <span class="irrigation-quick-text">
+      IRRIGATION: <strong>{{ 'ON (ACTIVE)' if sensors.relay else 'OFF (STANDBY)' }}</strong>
+    </span>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LIVE SENSOR TELEMETRY & IRRIGATION GRID (Firebase RTDB + ESP32 IoT)
+══════════════════════════════════════════════════════════════ -->
+<section class="telemetry-section">
+  <div class="section-title-row">
+    <div class="heading-group-with-badge">
+      <h2 class="section-heading"><span class="heading-icon">📡</span> Live Telemetry &amp; Firebase RTDB Values</h2>
+      <div class="firebase-sync-badge" id="firebase-sync-badge" title="Firebase Realtime Database live state">
+        <span class="fb-pulse {% if 'firebase' in (sensors.source|lower) %}active{% endif %}" id="fb-pulse"></span>
+        <span class="fb-text">Firebase RTDB:</span>
+        <span class="fb-status" id="fb-status-val">{{ 'CONNECTED (LIVE)' if 'firebase' in (sensors.source|lower) else 'READY' }}</span>
+        <button type="button" class="btn-fb-sync" onclick="forceFirebaseSync()" title="Force refresh from Firebase RTDB">🔄 Sync</button>
+      </div>
+    </div>
+    <div class="telemetry-header-meta">
+      <span class="telemetry-limits-pill" id="telemetry-limits-pill">
+        Limits: Temp &ge;<span id="lim-temp">{{ sensors.limits.temperature if sensors.limits else 35 }}</span>°C &middot;
+        Hum &le;<span id="lim-hum">{{ sensors.limits.humidity if sensors.limits else 30 }}</span>% &middot;
+        Gas &ge;<span id="lim-gas">{{ sensors.limits.gas if sensors.limits else 2000 }}</span> &middot;
+        Soil &lt;<span id="lim-soil">{{ sensors.limits.soilMoisture if sensors.limits else 30 }}</span>%
+      </span>
+      <span class="telemetry-source-tag {% if 'firebase' in (sensors.source|lower) %}source-firebase{% endif %}" id="telemetry-source">
+        Source: {{ sensors.source|upper }}
+      </span>
+    </div>
+  </div>
+
+  <div class="telemetry-grid">
+    <!-- 1. Temperature Card -->
+    <div class="card telemetry-card {% if sensors.temperatureDanger %}card-danger{% endif %}" id="card-temp">
+      <div class="telemetry-header">
+        <span class="telemetry-icon">🌡️</span>
+        <span class="telemetry-name">Ambient Temperature</span>
+        <span class="telemetry-status-tag" id="tag-temp">{{ sensors.temperatureStatus or ('HIGH' if sensors.temperatureDanger else 'NORMAL') }}</span>
+      </div>
+      <div class="telemetry-value-wrap">
+        <span class="telemetry-val" id="val-temp">{{ sensors.temperature }}</span>
+        <span class="telemetry-unit">°C</span>
+      </div>
+      <div class="telemetry-meter-wrap">
+        <div class="telemetry-meter-bar" id="meter-temp" data-val="{{ sensors.temperature }}"
+             data-max="50"></div>
+      </div>
+      <span class="telemetry-hint">Danger threshold: &ge; <span id="hint-temp">{{ sensors.limits.temperature if sensors.limits else 35.0 }}</span>°C</span>
+    </div>
+
+    <!-- 2. Humidity Card -->
+    <div class="card telemetry-card {% if sensors.humidityDanger %}card-danger{% endif %}" id="card-hum">
+      <div class="telemetry-header">
+        <span class="telemetry-icon">💧</span>
+        <span class="telemetry-name">Relative Humidity</span>
+        <span class="telemetry-status-tag" id="tag-hum">{{ sensors.humidityStatus or ('LOW' if sensors.humidityDanger else 'NORMAL') }}</span>
+      </div>
+      <div class="telemetry-value-wrap">
+        <span class="telemetry-val" id="val-hum">{{ sensors.humidity }}</span>
+        <span class="telemetry-unit">%</span>
+      </div>
+      <div class="telemetry-meter-wrap">
+        <div class="telemetry-meter-bar" id="meter-hum" data-val="{{ sensors.humidity }}"
+             data-max="100"></div>
+      </div>
+      <span class="telemetry-hint">Danger threshold: &le; <span id="hint-hum">{{ sensors.limits.humidity if sensors.limits else 30.0 }}</span>%</span>
+    </div>
+
+    <!-- 3. Soil Moisture Card -->
+    <div class="card telemetry-card {% if sensors.soilDry %}card-warning{% endif %}" id="card-soil">
+      <div class="telemetry-header">
+        <span class="telemetry-icon">🌱</span>
+        <span class="telemetry-name">Soil Moisture</span>
+        <span class="telemetry-status-tag" id="tag-soil">{{ sensors.soilStatus or ('DRY' if sensors.soilDry else 'OPTIMAL') }}</span>
+      </div>
+      <div class="telemetry-value-wrap">
+        <span class="telemetry-val" id="val-soil">{{ sensors.soilMoisture }}</span>
+        <span class="telemetry-unit">%</span>
+        <span class="telemetry-subval" id="val-soil-raw">({{ sensors.soilRaw }} ADC)</span>
+      </div>
+      <div class="telemetry-meter-wrap">
+        <div class="telemetry-meter-bar" id="meter-soil" data-val="{{ sensors.soilMoisture }}"
+             data-max="100"></div>
+      </div>
+      <span class="telemetry-hint">Threshold: &lt; <span id="hint-soil">{{ sensors.limits.soilMoisture if sensors.limits else 30 }}</span>% (<span id="tag-soil-status">{{ sensors.soilStatus or ('DRY' if sensors.soilDry else 'WET') }}</span>)</span>
+    </div>
+
+    <!-- 4. Gas Sensor Card (MQ-2) -->
+    <div class="card telemetry-card {% if sensors.gasDanger %}card-danger{% endif %}" id="card-gas">
+      <div class="telemetry-header">
+        <span class="telemetry-icon">💨</span>
+        <span class="telemetry-name">Gas Sensor Level (MQ-2)</span>
+        <span class="telemetry-status-tag" id="tag-gas">{{ sensors.gasStatus or ('HIGH' if sensors.gasDanger else 'NORMAL') }}</span>
+      </div>
+      <div class="telemetry-value-wrap">
+        <span class="telemetry-val" id="val-gas">{{ sensors.gas or sensors.gasRaw }}</span>
+        <span class="telemetry-unit">ADC</span>
+      </div>
+      <div class="telemetry-meter-wrap">
+        <div class="telemetry-meter-bar" id="meter-gas" data-val="{{ sensors.gas or sensors.gasRaw }}"
+             data-max="3000"></div>
+      </div>
+      <span class="telemetry-hint">Danger threshold: &ge; <span id="hint-gas">{{ sensors.limits.gas if sensors.limits else 2000 }}</span> ADC</span>
+    </div>
+
+    <!-- 5. Smart Irrigation Relay Station -->
+    <div class="card telemetry-card irrigation-card {% if sensors.relay %}relay-active{% endif %}" id="card-relay">
+      <div class="telemetry-header">
+        <span class="telemetry-icon">🚰</span>
+        <span class="telemetry-name">Irrigation Valve</span>
+        <span class="relay-mode-badge" id="relay-mode-badge">{{ sensors.relayMode|upper }} MODE</span>
+      </div>
+      <div class="irrigation-state-display">
+        <div class="relay-status-indicator {% if sensors.relay %}on{% else %}off{% endif %}" id="relay-status-indicator">
+          {{ 'IRRIGATION ON' if sensors.relay else 'IRRIGATION OFF' }}
+        </div>
+        <p class="irrigation-condition-sub" id="irrigation-condition-sub">
+          {% if sensors.relay %}
+            Soil moisture low ({{ sensors.soilMoisture }}%) — Automated water pump is active.
+          {% else %}
+            Soil moisture is adequate ({{ sensors.soilMoisture }}%) — Valve closed.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="relay-actions">
+        <button type="button" class="btn-relay-toggle {% if sensors.relay %}active{% endif %}" id="btn-relay-toggle"
+                onclick="toggleRelay()">
+          {{ 'Turn OFF Valve' if sensors.relay else 'Manual Override: Turn ON' }}
+        </button>
+        <button type="button" class="btn-relay-auto" id="btn-relay-auto" onclick="setRelayAuto()">
+          Reset to Auto Mode
+        </button>
+      </div>
+    </div>
+
+    <!-- 6. Hardware Actuator Alert LED (ESP32 IoT) -->
+    <div class="card telemetry-card {% if sensors.led == 'ON' %}card-warning{% endif %}" id="card-led">
+      <div class="telemetry-header">
+        <span class="telemetry-icon">💡</span>
+        <span class="telemetry-name">Hardware Alert LED</span>
+        <span class="telemetry-status-tag" id="tag-led">{{ sensors.led }}</span>
+      </div>
+      <div class="telemetry-value-wrap">
+        <span class="telemetry-val" id="val-led">{{ sensors.led }}</span>
+        <span class="telemetry-unit" id="unit-led">{{ 'ALERTING' if sensors.led == 'ON' else 'NORMAL' }}</span>
+      </div>
+      <div class="telemetry-meter-wrap">
+        <div class="telemetry-meter-bar meter-led {% if sensors.led == 'ON' %}active{% endif %}" id="meter-led" data-val="{{ '100' if sensors.led == 'ON' else '12' }}"></div>
+      </div>
+      <span class="telemetry-hint">Pin Actuator: triggers on safety thresholds</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     AI CROP DISEASE DIAGNOSIS & LEAF TESTING STUDIO
+══════════════════════════════════════════════════════════════ -->
+<section class="diagnosis-section">
+  <div class="section-title-row">
+    <h2 class="section-heading"><span class="heading-icon">🔬</span> AI Crop Disease Diagnostic Studio</h2>
+    <span class="section-subtext">Hugging Face ViT Edge Model &middot; Zero Internet Required</span>
+  </div>
+
+  <div class="diagnosis-grid">
+
+    <!-- LEFT: Input Channel Card (Webcam / Upload / Hardware) -->
+    <div class="card diagnosis-input-card" id="diagnosis-input-card">
+      <h3 class="card-title">Test Crop Leaf Condition</h3>
+      <p class="card-subtext">Take a photo using your phone/webcam, upload an image file, or trigger edge hardware.</p>
+
+      <!-- Input Mode Navigation -->
+      <div class="analyze-tabs">
+        <button type="button" class="analyze-tab-btn active" id="tab-btn-upload" onclick="switchAnalyzeTab('upload')">
+          📤 Upload Photo
+        </button>
+        <button type="button" class="analyze-tab-btn" id="tab-btn-webcam" onclick="switchAnalyzeTab('webcam')">
+          📱 Device Camera
+        </button>
+        <button type="button" class="analyze-tab-btn" id="tab-btn-capture" onclick="switchAnalyzeTab('capture')">
+          🤖 Pi Camera
+        </button>
+      </div>
+
+      <!-- Tab 1: Drag & Drop / File Upload -->
+      <div class="tab-pane" id="tab-content-upload">
+        <div class="dropzone" id="upload-dropzone" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" class="d-none" accept="image/*"
+                 title="Upload crop leaf image" aria-label="Upload crop leaf image"
+                 onchange="handleFileSelect(event)">
+          <div class="dropzone-content" id="dropzone-content">
+            <span class="dropzone-icon">🌱</span>
+            <p class="dropzone-text">
+              <strong>Drag &amp; drop leaf photo here</strong> or <span class="dropzone-browse">browse files</span>
+            </p>
+            <span class="dropzone-sub">Supports high-res JPG, PNG, WEBP, BMP</span>
+          </div>
+          <div class="upload-preview-wrap d-none" id="upload-preview-wrap">
+            <img id="upload-preview-img" class="upload-preview-img" alt="Selected leaf preview">
+            <p class="upload-file-name" id="upload-file-name"></p>
+          </div>
+        </div>
+
+        <button type="button" class="btn-analyze btn-upload-submit d-none" id="btn-upload-submit" onclick="uploadAndAnalyze()">
+          <span class="btn-analyze-icon">🔬</span>
+          <span class="btn-analyze-text" id="btn-upload-text">RUN AI DISEASE ANALYSIS</span>
+        </button>
+      </div>
+
+      <!-- Tab 2: Live Browser Webcam / Phone Camera Capture -->
+      <div class="tab-pane d-none" id="tab-content-webcam">
+        <div class="webcam-box" id="webcam-box">
+          <video id="webcam-video" autoplay muted class="webcam-video d-none"></video>
+          <canvas id="webcam-canvas" class="d-none"></canvas>
+          <div class="webcam-placeholder" id="webcam-placeholder">
+            <span class="webcam-icon">📷</span>
+            <p>Live camera stream not started</p>
+            <button type="button" class="btn-webcam-start" onclick="startWebcam()">Enable Camera</button>
+          </div>
+        </div>
+
+        <div class="webcam-controls d-none" id="webcam-controls">
+          <button type="button" class="btn-analyze" id="btn-snap" onclick="captureWebcamSnapshot()">
+            <span class="btn-analyze-icon">📸</span>
+            <span>CAPTURE &amp; ANALYZE NOW</span>
+          </button>
+          <button type="button" class="btn-webcam-stop" onclick="stopWebcam()">Turn Off Camera</button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Hardware Pi Camera Trigger -->
+      <div class="tab-pane d-none" id="tab-content-capture">
+        <div class="hardware-cam-box">
+          <span class="hw-icon">📸</span>
+          <p class="hw-title">Raspberry Pi Zero Camera Module</p>
+          <p class="hw-desc">Trigger instant snapshot from connected CSI/USB camera mount in field.</p>
+        </div>
+        <button class="btn-analyze" id="btn-analyze" onclick="triggerAnalysis()"
+                aria-label="Capture image and run AI analysis">
+          <span class="btn-analyze-icon" id="btn-analyze-icon">📷</span>
+          <span class="btn-analyze-text" id="btn-analyze-text">CAPTURE FROM PI CAMERA</span>
+        </button>
+      </div>
+
+      <!-- Shared Progress Indicator -->
+      <div class="analyze-progress d-none" id="analyze-progress">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        </div>
+        <p class="progress-label" id="progress-label">Initialising AI engine…</p>
+      </div>
+    </div>
+
+
+    <!-- RIGHT: Live AI Diagnosis Result & Agronomic Prescription -->
+    <div class="card diagnosis-result-card" id="diagnosis-result-card">
+      <div class="result-card-header">
+        <h3 class="card-title">Diagnostic Dossier</h3>
+        {% if latest %}
+          <span class="result-badge badge-{{ latest.status }}" id="latest-status-badge">
+            {{ latest.status|upper }}
+          </span>
+        {% endif %}
+      </div>
+
+      {% if latest %}
+        <div class="dossier-body">
+          <!-- Top summary row: Crop & Disease, Score, Image -->
+          <div class="dossier-hero">
+            <div class="dossier-img-wrap">
+              <img src="/captured_images/{{ latest.image_filename }}"
+                   alt="Analyzed crop leaf" class="dossier-img" id="dossier-img"
+                   onerror="this.parentElement.innerHTML='<div class=\'img-fallback\'>🍃<br>No Image</div>'">
+              <div class="heatmap-overlay d-none" id="heatmap-overlay"></div>
+              <button type="button" class="btn-heatmap-toggle" id="btn-heatmap-toggle" onclick="toggleHeatmap()">
+                🔍 Toggle Symptom Heatmap
+              </button>
+            </div>
+
+            <div class="dossier-meta">
+              <div class="dossier-crop-title">
+                <span class="dossier-crop">{{ latest.crop }}</span>
+                <span class="dossier-disease">{{ latest.disease or 'Healthy Foliage' }}</span>
+              </div>
+
+              <!-- Confidence Meter -->
+              <div class="conf-meter-group">
+                <div class="conf-meter-labels">
+                  <span>AI Confidence</span>
+                  <strong>{{ '%.1f'|format((latest.confidence or 0)*100) }}% ({{ latest.confidence_level|capitalize }})</strong>
+                </div>
+                <div class="confidence-bar-track">
+                  <div class="confidence-bar-fill conf-bar-{{ latest.confidence_level }} conf-bar-var"
+                       data-conf-w="{{ '%.1f'|format((latest.confidence or 0)*100) }}"></div>
+                </div>
+              </div>
+
+              <!-- Health Score Index -->
+              <div class="health-score-card">
+                <div class="score-dial">
+                  <span class="score-num">{{ '98' if latest.status == 'healthy' else ('45' if latest.status == 'diseased' else '70') }}</span>
+                  <span class="score-max">/100</span>
+                </div>
+                <div class="score-info">
+                  <span class="score-label">Crop Health Index</span>
+                  <span class="score-risk {% if latest.status == 'healthy' %}risk-low{% else %}risk-high{% endif %}">
+                    {{ 'LOW RISK (Vigorous)' if latest.status == 'healthy' else 'HIGH RISK (Action Needed)' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prescription & Action Plan -->
+          <div class="prescription-box">
+            <div class="prescription-header">
+              <span class="rx-icon">📋</span>
+              <h4>Agronomic Action Plan &amp; Treatment</h4>
+            </div>
+
+            <div class="rx-tabs">
+              <button type="button" class="rx-tab-btn active" onclick="switchRxTab('immediate', this)">⚡ Immediate Action</button>
+              <button type="button" class="rx-tab-btn" onclick="switchRxTab('chemical', this)">🧪 Chemical Remedy</button>
+              <button type="button" class="rx-tab-btn" onclick="switchRxTab('organic', this)">🍃 Organic / Bio</button>
+              <button type="button" class="rx-tab-btn" onclick="switchRxTab('prevention', this)">🛡️ Prevention</button>
+            </div>
+
+            <div class="rx-content-pane" id="rx-pane-immediate">
+              <p class="rx-text">
+                {% if latest.status == 'healthy' %}
+                  ✓ Continue standard irrigation and scheduled fertilizer regime. No corrective spray needed.
+                {% else %}
+                  ⚠️ Isolate affected crop patch. Remove and safely dispose of severely infected leaves. Avoid handling wet plants to prevent spreading fungal spores.
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="rx-content-pane d-none" id="rx-pane-chemical">
+              <div class="rx-detail-grid">
+                <div><strong>Recommended Fungicide:</strong> Azoxystrobin 23% SC or Mancozeb 75% WP</div>
+                <div><strong>Dosage:</strong> 1.5 - 2.0 g/L of clean water</div>
+                <div><strong>Spray Timing:</strong> Early morning (6:00–9:00 AM) with complete canopy coverage.</div>
+              </div>
+            </div>
+
+            <div class="rx-content-pane d-none" id="rx-pane-organic">
+              <div class="rx-detail-grid">
+                <div><strong>Bio-Fungicide:</strong> Neem Seed Kernel Extract (NSKE 5%) or Trichoderma viride</div>
+                <div><strong>Application:</strong> 50 ml/L (NSKE) or 5 g/L (Trichoderma) as foliar spray</div>
+                <div><strong>Benefit:</strong> Builds protective biological film without leaving toxic residues.</div>
+              </div>
+            </div>
+
+            <div class="rx-content-pane d-none" id="rx-pane-prevention">
+              <ul class="rx-bullet-list">
+                <li>Implement drip irrigation to keep leaf canopy dry.</li>
+                <li>Maintain 45–60 cm plant spacing for optimal ventilation.</li>
+                <li>Rotate crop with non-host legumes next season.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Interactive Farmer Checklist -->
+          <div class="treatment-checklist">
+            <h5>On-Field Farmer Checklist:</h5>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="toggleChecklistItem(this)">
+              <span>Inspect neighboring rows for early lesion spots</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="toggleChecklistItem(this)">
+              <span>Prune and incinerate infected foliage</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="toggleChecklistItem(this)">
+              <span>Apply recommended protective spray as scheduled</span>
+            </label>
+          </div>
+
+          <div class="dossier-footer">
+            <a href="/image/{{ latest.id }}" class="btn-detail-link">View Full Diagnostic Dossier #{{ latest.id }} &rarr;</a>
+            <button type="button" class="btn-print-report" onclick="window.print()">🖨️ Print Farm Report</button>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-dossier">
+          <span class="empty-icon">🍃</span>
+          <h4>No crop scans recorded yet</h4>
+          <p>Upload a photo above or use your camera to get an instant AI disease diagnosis.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     RECENT SCANS LOG & QUICK STATISTICS TABLE
+══════════════════════════════════════════════════════════════ -->
+<section class="history-preview-section">
+  <div class="section-title-row">
+    <h2 class="section-heading"><span class="heading-icon">📋</span> Recent Crop Health Scans</h2>
+    <a href="{{ url_for('history') }}" class="view-all-link">View All History &rarr;</a>
+  </div>
+
+  <div class="card table-card">
+    <table class="data-table" id="recent-table">
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Time</th>
+          <th>Crop</th>
+          <th>Diagnosis</th>
+          <th>Status</th>
+          <th>Confidence</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent %}
+          <tr>
+            <td><strong>#{{ p.id }}</strong></td>
+            <td class="td-time">{{ p.timestamp[-8:] if p.timestamp else '—' }}</td>
+            <td>{{ p.crop or '—' }}</td>
+            <td>{{ p.disease or 'Healthy' }}</td>
+            <td>
+              <span class="mini-badge badge-{{ p.status }}">{{ p.status|upper }}</span>
+            </td>
+            <td>
+              <div class="mini-conf-bar">
+                <div class="mini-conf-fill conf-bar-{{ p.confidence_level }} conf-bar-var"
+                     data-conf-w="{{ '%.0f'|format((p.confidence or 0)*100) }}"></div>
+              </div>
+              {{ '%.0f'|format((p.confidence or 0)*100) }}%
+            </td>
+            <td>
+              <a href="/image/{{ p.id }}" class="btn-view-scan">Inspect</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="td-empty">No scan records available yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Notification Toast -->
+<div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Firebase RTDB Client Configuration & Realtime Sync -->
+<script id="firebase-config-data" type="application/json">
+  {{ firebase_config|tojson if firebase_config else '{}' }}
+</script>
+<script>
+  window.FIREBASE_CONFIG = (function() {
+    try {
+      var el = document.getElementById('firebase-config-data');
+      return el ? JSON.parse(el.textContent) : {};
+    } catch (e) {
+      return {};
+    }
+  })();
+  window.FIREBASE_URL = "{{ firebase_url }}";
+  window.FIREBASE_ENABLED = "{{ 'true' if firebase_enabled else 'false' }}" === "true";
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// Initialize Firebase RTDB in browser if available
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.FIREBASE_ENABLED && typeof firebase !== 'undefined' && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+      }
+      const rtdb = firebase.database();
+      window._firebaseDB = rtdb;
+      
+      const currentRef = rtdb.ref('agriculture/current');
+      currentRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          if (typeof _handleFirebaseRTDBUpdate === 'function') {
+            _handleFirebaseRTDBUpdate(val);
+          }
+        }
+      }, (err) => {
+        console.warn('Firebase RTDB live listener note:', err);
+      });
+    } catch (e) {
+      console.warn('Firebase client initialization note:', e);
+    }
+  }
+});
+
+function switchRxTab(paneId, btn) {
+  document.querySelectorAll('.rx-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.rx-content-pane').forEach(p => p.classList.add('d-none'));
+
+  btn.classList.add('active');
+  const target = document.getElementById('rx-pane-' + paneId);
+  if (target) target.classList.remove('d-none');
+}
+
+function toggleHeatmap() {
+  const overlay = document.getElementById('heatmap-overlay');
+  const btn = document.getElementById('btn-heatmap-toggle');
+  if (!overlay) return;
+
+  if (overlay.classList.contains('d-none')) {
+    overlay.classList.remove('d-none');
+    btn.textContent = '✕ Hide Symptom Heatmap';
+  } else {
+    overlay.classList.add('d-none');
+    btn.textContent = '🔍 Toggle Symptom Heatmap';
+  }
+}
+
+function toggleChecklistItem(input) {
+  const label = input.closest('.checklist-item');
+  if (input.checked) {
+    label.classList.add('completed');
+  } else {
+    label.classList.remove('completed');
+  }
+}
+</script>
+{% endblock %}

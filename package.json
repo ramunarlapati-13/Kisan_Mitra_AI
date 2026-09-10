@@ -1,0 +1,24 @@
+{
+  "name": "kisan-mitra-ai",
+  "version": "1.0.0",
+  "description": "Kisan Mitra AI — Smart Agriculture, Crop Disease Detection & IoT Environmental Monitoring. Created by Circuit Maze Team as part of SIH 2026.",
+  "main": "crop_assistant/app.py",
+  "scripts": {
+    "dev": "cd crop_assistant && python app.py",
+    "start": "cd crop_assistant && python app.py",
+    "serve": "cd crop_assistant && python app.py"
+  },
+  "keywords": [
+    "kisan-mitra-ai",
+    "circuit-maze",
+    "sih2026",
+    "smart-agriculture",
+    "iot",
+    "esp32",
+    "crop-disease-detection",
+    "raspberry-pi",
+    "huggingface"
+  ],
+  "author": "Circuit Maze Team (SIH 2026)",
+  "license": "Apache-2.0"
+}

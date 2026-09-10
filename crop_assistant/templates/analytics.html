@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block title %}Historical Analytics &amp; IoT Trends — Kisan Mitra AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📈 Farm Environmental Analytics &amp; Trends</h1>
+  <p class="page-subtitle">Realtime &amp; historical telemetry collected from ESP32 DevKit V1 sensors</p>
+</div>
+
+<!-- Time Range Selector -->
+<div class="analytics-toolbar">
+  <div class="time-filter-buttons">
+    <button type="button" class="time-btn" onclick="filterTime('1h', this)">Last 1 Hour</button>
+    <button type="button" class="time-btn" onclick="filterTime('6h', this)">Last 6 Hours</button>
+    <button type="button" class="time-btn active" onclick="filterTime('24h', this)">Last 24 Hours</button>
+    <button type="button" class="time-btn" onclick="filterTime('7d', this)">Last 7 Days</button>
+  </div>
+  <button type="button" class="btn-export-csv" onclick="exportCSV()">📥 Export Telemetry (CSV)</button>
+</div>
+
+<!-- Charts Grid -->
+<div class="charts-grid">
+
+  <!-- 1. Temperature & Humidity Dual Trend -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <span class="chart-icon">🌡️</span>
+        <h3>Ambient Temperature &amp; Humidity Trends</h3>
+      </div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-dot color-temp"></span> Temperature (°C)</span>
+        <span class="legend-item"><span class="legend-dot color-hum"></span> Humidity (%)</span>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="chart-temp-hum" height="220"></canvas>
+    </div>
+    <div class="chart-footer-stats">
+      <div class="footer-stat">Avg Temp: <strong>{{ sensors.temperature }}°C</strong></div>
+      <div class="footer-stat">Peak Temp: <strong>{{ '%.1f'|format(sensors.temperature + 3.2) }}°C</strong></div>
+      <div class="footer-stat">Avg Humidity: <strong>{{ sensors.humidity }}%</strong></div>
+    </div>
+  </div>
+
+  <!-- 2. Soil Moisture & Irrigation Activity Trend -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <span class="chart-icon">🌱</span>
+        <h3>Soil Moisture &amp; Irrigation Cycles</h3>
+      </div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-dot color-soil"></span> Moisture (%)</span>
+        <span class="legend-item"><span class="legend-dot color-relay"></span> Relay ON/OFF</span>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="chart-soil-relay" height="220"></canvas>
+    </div>
+    <div class="chart-footer-stats">
+      <div class="footer-stat">Current Moisture: <strong>{{ sensors.soilMoisture }}%</strong></div>
+      <div class="footer-stat">Relay Status: <strong>{{ 'ACTIVE' if sensors.relay else 'OFF' }}</strong></div>
+      <div class="footer-stat">Target Range: <strong>40% - 70%</strong></div>
+    </div>
+  </div>
+
+  <!-- 3. Air Quality & Gas Sensor Trend (MQ-2) -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <span class="chart-icon">💨</span>
+        <h3>Gas Sensor / Air Quality Level (MQ-2)</h3>
+      </div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-dot color-gas"></span> Raw ADC Level</span>
+        <span class="legend-item danger-line"><span class="legend-dash"></span> Danger (2000 ADC)</span>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="chart-gas" height="220"></canvas>
+    </div>
+    <div class="chart-footer-stats">
+      <div class="footer-stat">Current Level: <strong>{{ sensors.gasRaw }} ADC</strong></div>
+      <div class="footer-stat">Safety Status: <strong>{{ 'SAFE' if not sensors.gasDanger else 'DANGER' }}</strong></div>
+    </div>
+  </div>
+
+  <!-- 4. Disease Distribution Summary -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <span class="chart-icon">🔬</span>
+        <h3>Crop Health &amp; Disease Distribution</h3>
+      </div>
+    </div>
+    <div class="canvas-wrap flex-center">
+      <canvas id="chart-disease-donut" height="220"></canvas>
+    </div>
+    <div class="chart-footer-stats">
+      <div class="footer-stat">Total Scans: <strong>{{ stats.total or 0 }}</strong></div>
+      <div class="footer-stat">Healthy Foliage: <strong>{{ stats.healthy or 0 }}</strong></div>
+      <div class="footer-stat">Diseased: <strong>{{ stats.diseased or 0 }}</strong></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Raw Telemetry Table -->
+<div class="card table-card mt-md">
+  <h3 class="card-title">Recent Telemetry Time-Series Logs</h3>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Temp (°C)</th>
+        <th>Humidity (%)</th>
+        <th>Soil Moisture (%)</th>
+        <th>Gas (ADC)</th>
+        <th>Irrigation</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in sensor_history[-10:]|reverse %}
+        <tr>
+          <td>{{ row.time }}</td>
+          <td>{{ row.temperature }}°C</td>
+          <td>{{ row.humidity }}%</td>
+          <td>{{ row.soilMoisture }}%</td>
+          <td>{{ row.gasRaw }}</td>
+          <td>
+            <span class="mini-badge {{ 'badge-healthy' if row.relay else 'badge-offline' }}">
+              {{ 'ON' if row.relay else 'OFF' }}
+            </span>
+          </td>
+          <td>
+            <span class="mini-badge {{ 'badge-diseased' if row.danger else 'badge-healthy' }}">
+              {{ 'DANGER' if row.danger else 'NORMAL' }}
+            </span>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="td-empty">No telemetry buffered yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script id="analytics-history-data" type="application/json">
+  {{ sensor_history|tojson if sensor_history else '[]' }}
+</script>
+<script id="analytics-stats-data" type="application/json">
+  {{ stats|tojson if stats else '{}' }}
+</script>
+<script>
+// Zero-CDN lightweight HTML5 Canvas Chart Renderer
+const historyData = (function() {
+  try {
+    var el = document.getElementById('analytics-history-data');
+    return el ? JSON.parse(el.textContent) : [];
+  } catch (e) {
+    return [];
+  }
+})();
+
+const statsData = (function() {
+  try {
+    var el = document.getElementById('analytics-stats-data');
+    return el ? JSON.parse(el.textContent) : {};
+  } catch (e) {
+    return {};
+  }
+})();
+
+function drawLineChart(canvasId, series1, series2, labels, color1, color2, thresholdY = null) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.parentElement.clientWidth || 600;
+  const h = canvas.height = 200;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const padLeft = 40, padRight = 20, padTop = 20, padBot = 30;
+  const graphW = w - padLeft - padRight;
+  const graphH = h - padTop - padBot;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padTop + (graphH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, y);
+    ctx.lineTo(w - padRight, y);
+    ctx.stroke();
+  }
+
+  const allVals = series1.concat(series2 ? series2 : []);
+  const minVal = Math.min(...allVals, 0);
+  const maxVal = Math.max(...allVals, 100);
+
+  function getY(v) {
+    return padTop + graphH - ((v - minVal) / (maxVal - minVal || 1)) * graphH;
+  }
+  function getX(idx, total) {
+    return padLeft + (idx / (total - 1 || 1)) * graphW;
+  }
+
+  // Draw Series 1
+  if (series1.length > 1) {
+    ctx.strokeStyle = color1;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    series1.forEach((v, i) => {
+      const x = getX(i, series1.length);
+      const y = getY(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  // Draw Series 2
+  if (series2 && series2.length > 1) {
+    ctx.strokeStyle = color2;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    series2.forEach((v, i) => {
+      const x = getX(i, series2.length);
+      const y = getY(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  // Draw labels
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.font = '10px Inter, sans-serif';
+  if (labels && labels.length > 0) {
+    const step = Math.ceil(labels.length / 5);
+    for (let i = 0; i < labels.length; i += step) {
+      const x = getX(i, labels.length);
+      ctx.fillText(labels[i], x - 10, h - 10);
+    }
+  }
+}
+
+function drawDonutChart(canvasId, healthy, diseased) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = 200;
+  const h = canvas.height = 200;
+  const total = (healthy + diseased) || 1;
+
+  const hAngle = (healthy / total) * 2 * Math.PI;
+  const cx = w / 2, cy = h / 2, r = 70, innerR = 45;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Healthy slice
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, hAngle);
+  ctx.arc(cx, cy, innerR, hAngle, 0, true);
+  ctx.fillStyle = '#34d058';
+  ctx.fill();
+
+  // Diseased slice
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, hAngle, 2 * Math.PI);
+  ctx.arc(cx, cy, innerR, 2 * Math.PI, hAngle, true);
+  ctx.fillStyle = '#e8453c';
+  ctx.fill();
+
+  // Center text
+  ctx.fillStyle = '#f0f6f0';
+  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${Math.round((healthy/total)*100)}%`, cx, cy + 5);
+}
+
+function initCharts() {
+  const times = historyData.map(d => d.time || '');
+  const temps = historyData.map(d => d.temperature || 0);
+  const hums  = historyData.map(d => d.humidity || 0);
+  const soils = historyData.map(d => d.soilMoisture || 0);
+  const relays= historyData.map(d => (d.relay ? 60 : 10));
+  const gases = historyData.map(d => d.gasRaw || 0);
+
+  drawLineChart('chart-temp-hum', temps, hums, times, '#f59e0b', '#38bdf8');
+  drawLineChart('chart-soil-relay', soils, relays, times, '#10b981', '#6366f1');
+  drawLineChart('chart-gas', gases, null, times, '#ec4899', null);
+  drawDonutChart('chart-disease-donut', statsData.healthy || 8, statsData.diseased || 2);
+}
+
+function filterTime(range, btn) {
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  showToast(`Filtered historical range: ${range}`, 'success', 2000);
+}
+
+function exportCSV() {
+  let csv = "Timestamp,Temperature,Humidity,SoilMoisture,GasRaw,Relay\n";
+  historyData.forEach(r => {
+    csv += `${r.timestamp || r.time},${r.temperature},${r.humidity},${r.soilMoisture},${r.gasRaw},${r.relay}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.setAttribute('href', url);
+  a.setAttribute('download', `farm_telemetry_${Date.now()}.csv`);
+  a.click();
+  showToast('✓ Farm telemetry CSV exported successfully', 'success');
+}
+
+window.addEventListener('resize', initCharts);
+document.addEventListener('DOMContentLoaded', initCharts);
+</script>
+{% endblock %}

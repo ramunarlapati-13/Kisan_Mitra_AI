@@ -1,0 +1,61 @@
+[Unit]
+Description=AI Crop Assistant — Offline Edge AI Crop Disease Monitor
+Documentation=https://github.com/LishaV01/agriculture-crop-disease-detection
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+
+# Adjust WorkingDirectory and ExecStart to match your actual installation path
+WorkingDirectory=/home/pi/crop_assistant
+ExecStart=/home/pi/crop_assistant/.venv/bin/python /home/pi/crop_assistant/app.py
+
+# Restart policy
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Environment
+Environment=FLASK_DEBUG=false
+Environment=FLASK_HOST=0.0.0.0
+Environment=FLASK_PORT=5000
+Environment=SCHEDULER_ENABLED=true
+Environment=SCHEDULER_DEFAULT_MIN=60
+
+# Resource limits (Pi Zero W has 512 MB RAM)
+# MemoryMax=400M
+# CPUQuota=95%
+
+# Logging (output goes to journald)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crop-assistant
+
+[Install]
+WantedBy=multi-user.target
+
+# ─── Installation ────────────────────────────────────────────────────────────
+# 1. Copy this file to the Pi:
+#    sudo cp systemd/crop-assistant.service /etc/systemd/system/
+#
+# 2. Reload systemd:
+#    sudo systemctl daemon-reload
+#
+# 3. Enable at boot:
+#    sudo systemctl enable crop-assistant
+#
+# 4. Start now:
+#    sudo systemctl start crop-assistant
+#
+# 5. Check status:
+#    sudo systemctl status crop-assistant
+#
+# 6. View live logs:
+#    journalctl -u crop-assistant -f
+#
+# 7. Restart after code changes:
+#    sudo systemctl restart crop-assistant

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Kisan Mitra AI — Smart Agriculture, Crop Disease Detection &amp; IoT Monitoring by Circuit Maze Team (SIH 2026)">
+  <title>{% block title %}Kisan Mitra AI{% endblock %}</title>
+  <!--
+    OFFLINE-FIRST: Zero external CDN links.
+    All CSS and JS are served from /static/ on the Pi itself.
+    This page loads fully with NO internet connection.
+  -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-brand">
+      <span class="nav-icon">🌾</span>
+      <div class="nav-title-group">
+        <span class="nav-title">Kisan Mitra AI</span>
+        <span class="nav-subtitle" id="nav-iot-badge">Circuit Maze &middot; SIH 2026</span>
+      </div>
+    </div>
+
+    <ul class="nav-links" role="list">
+      <li><a href="{{ url_for('index') }}"
+             class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
+             id="nav-dashboard">📊 Dashboard</a></li>
+      <li><a href="{{ url_for('analytics') }}"
+             class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}"
+             id="nav-analytics">📈 Analytics</a></li>
+      <li><a href="{{ url_for('alerts') }}"
+             class="nav-link {% if request.endpoint == 'alerts' %}active{% endif %}"
+             id="nav-alerts">🚨 Alerts</a></li>
+      <li><a href="{{ url_for('history') }}"
+             class="nav-link {% if request.endpoint == 'history' %}active{% endif %}"
+             id="nav-history">📜 History</a></li>
+      <li><a href="{{ url_for('settings') }}"
+             class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}"
+             id="nav-settings">⚙️ Settings</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <!-- Live Environmental Status Chip -->
+      <div class="env-status-chip" id="nav-env-chip">
+        <span class="pulse-indicator" id="nav-env-pulse"></span>
+        <span id="nav-env-status-text">NORMAL</span>
+      </div>
+
+      <div class="nav-status" id="nav-status-bar" aria-live="polite">
+        <span class="status-dot" id="nav-system-dot" title="ESP32 IoT telemetry"></span>
+        <span class="status-dot cam" id="nav-camera-dot" title="Camera subsystem"></span>
+        <span class="status-dot ai" id="nav-ai-dot" title="AI inference engine"></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page content ── -->
+  <main class="page-main" role="main">
+    {% if error is defined and error %}
+      <div class="alert alert-error" role="alert">
+        <span class="alert-icon">⚠</span> {{ error }}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="page-footer" role="contentinfo">
+    <p><strong>Kisan Mitra AI</strong> &nbsp;·&nbsp; Created by <strong>Circuit Maze Team</strong> as part of <strong>SIH 2026</strong> &nbsp;·&nbsp; Edge AI &amp; IoT Farm Assistant</p>
+    <p class="footer-meta">Model: <code>LishaV01/agriculture-crop-disease-detection</code> (Apache-2.0) &nbsp;·&nbsp; Smart India Hackathon 2026</p>
+    <p class="footer-disclaimer">
+      ⚠ AI predictions are decision-support tools only — not a substitute for professional agronomic advice.
+    </p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
