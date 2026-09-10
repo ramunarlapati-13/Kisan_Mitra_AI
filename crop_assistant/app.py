@@ -123,6 +123,8 @@ logger.info("[app] All subsystems initialised — Flask starting")
 # ─── Dashboard Routes ─────────────────────────────────────────────────────────
 
 @app.route("/")
+@app.route("/api/index")
+@app.route("/api/index.py")
 def index():
     """Main dashboard."""
     from database.db import get_latest_prediction, get_stats
