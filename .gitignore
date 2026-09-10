@@ -1,11 +1,54 @@
+# Python bytecode & cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment configurations & secrets
 .env
+.env.*
+!.env.example
 crop_assistant/.env
+
+# Local database & logs
 crop_assistant/logs/*.log
 crop_assistant/captured_images/*.jpg
 crop_assistant/database/*.db
 crop_assistant/database/*.db-shm
 crop_assistant/database/*.db-wal
+
+# Vercel build output & CLI artifacts
+.vercel/
+
+# IDE & OS caches
+.vscode/
+.idea/
+.markdown-collab/
+.mcp.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

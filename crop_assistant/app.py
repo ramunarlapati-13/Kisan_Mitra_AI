@@ -105,7 +105,10 @@ health_service.set_inference_engine(inference_engine)
 health_service.set_camera_status(camera_status)
 
 # 5. API Blueprint
-from api.routes import api_bp
+try:
+    from api.routes import api_bp
+except ModuleNotFoundError:
+    from crop_assistant.api.routes import api_bp
 app.register_blueprint(api_bp)
 
 # 6. Scheduler

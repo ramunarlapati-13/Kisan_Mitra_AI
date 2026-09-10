@@ -40,6 +40,13 @@ def firebase_config():
 def firebase_sync():
     """Trigger manual fetch from Firebase RTDB and return parsed telemetry."""
     from services.sensor_service import sensor_service
+    if not FIREBASE_RTDB_URL:
+        return jsonify({
+            "success": False,
+            "message": "FIREBASE_RTDB_URL is not configured in environment variables",
+            "data": sensor_service.get_current()
+        }), 200
+
     fb_data = sensor_service._fetch_firebase()
     if fb_data:
         sensor_service._update_from_firebase(fb_data)

@@ -28,7 +28,7 @@ import numpy as np
 from datetime import datetime
 
 from config import (MODEL_PATH, HUGGINGFACE_MODEL, MODEL_VERSION,
-                    CONFIDENCE_HIGH, CONFIDENCE_MEDIUM)
+                    CONFIDENCE_HIGH, CONFIDENCE_MEDIUM, IS_SERVERLESS)
 from ai.labels import LABELS, get_label, parse_label, classify_confidence, update_labels_from_model
 from ai.preprocessing import preprocess
 
@@ -227,6 +227,10 @@ class InferenceEngine:
     # ──────────────────────────────────────────────────────────────────────────
 
     def _try_load_pytorch(self) -> bool:
+        if IS_SERVERLESS:
+            logger.info("[inference] Serverless runtime detected — bypassing heavy PyTorch download")
+            return False
+
         try:
             import torch
             from transformers import AutoImageProcessor, AutoModelForImageClassification
