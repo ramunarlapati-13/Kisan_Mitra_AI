@@ -2035,5 +2035,436 @@ img { max-width: 100%; display: block; }
   padding-left: 0.25rem;
 }
 
+/* ─── Screen Default: Hide Print Letterheads ─── */
+.print-official-header,
+.print-official-footer {
+  display: none;
+}
+
+/* ==========================================================================
+   PROFESSIONAL PRINT STYLESHEET (AGRONOMIC PATHOLOGY & PRESCRIPTION REPORT)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+
+  /* 1. Global Reset: Pure Paper White & Deep Charcoal Typography */
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 2. Hide Web Navigation, Interactive Controls & Shell Chrome */
+  nav.navbar,
+  footer.page-footer,
+  .page-header,
+  .image-inspector-toolbar,
+  .detail-nav,
+  .rx-tabs,
+  .toast,
+  .nav-actions,
+  .back-link,
+  .btn-print-report,
+  .btn-heatmap-toggle,
+  .btn-nav,
+  .heatmap-overlay,
+  .capture-section,
+  .sensor-overview,
+  .recent-table-card,
+  .dossier-footer,
+  .alerts-feed-card,
+  .settings-form,
+  .pagination,
+  .table-filters {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* 3. Official Printable Letterhead */
+  .print-official-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    border-bottom: 2.5px solid #1b5e20 !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 14px !important;
+    page-break-after: avoid;
+  }
+
+  .print-header-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .print-brand-badge {
+    font-size: 28pt !important;
+    line-height: 1 !important;
+  }
+
+  .print-org-name {
+    font-size: 16pt !important;
+    font-weight: 800 !important;
+    color: #1b5e20 !important;
+    margin: 0 0 2px 0 !important;
+    letter-spacing: 0.5px;
+  }
+
+  .print-org-sub {
+    font-size: 9pt !important;
+    color: #333333 !important;
+    margin: 0 !important;
+    font-weight: 600 !important;
+  }
+
+  .print-org-team {
+    font-size: 8pt !important;
+    color: #666666 !important;
+    margin: 2px 0 0 0 !important;
+    font-style: italic !important;
+  }
+
+  .print-header-meta {
+    text-align: right !important;
+  }
+
+  .print-meta-pill {
+    display: inline-block !important;
+    background: #e8f5e9 !important;
+    color: #1b5e20 !important;
+    border: 1px solid #81c784 !important;
+    padding: 2px 8px !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    border-radius: 3px !important;
+    margin-bottom: 4px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .print-meta-details {
+    font-size: 8pt !important;
+    color: #222222 !important;
+    line-height: 1.35 !important;
+  }
+
+  /* 4. Report Grid & Specimen Image */
+  .page-main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .detail-grid {
+    display: grid !important;
+    grid-template-columns: 220px 1fr !important;
+    gap: 14px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .card {
+    border: 1px solid #c0c0c0 !important;
+    background: #ffffff !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .detail-image-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    text-align: center;
+  }
+
+  .detail-image {
+    max-width: 100% !important;
+    max-height: 200px !important;
+    object-fit: cover !important;
+    border-radius: 4px !important;
+    border: 1px solid #999999 !important;
+  }
+
+  /* 5. Diagnosis Dossier Header */
+  .dossier-card-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 6px !important;
+    border-bottom: 1px solid #dddddd !important;
+    padding-bottom: 4px !important;
+  }
+
+  .dossier-card-top .card-title {
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+  }
+
+  .result-badge {
+    border: 1.5px solid #222222 !important;
+    padding: 2px 6px !important;
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    border-radius: 3px !important;
+    text-transform: uppercase !important;
+  }
+
+  .badge-diseased {
+    border-color: #d32f2f !important;
+    color: #b71c1c !important;
+    background: #ffebee !important;
+  }
+
+  .badge-healthy {
+    border-color: #388e3c !important;
+    color: #1b5e20 !important;
+    background: #e8f5e9 !important;
+  }
+
+  .diag-crop {
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    color: #555555 !important;
+    text-transform: uppercase !important;
+  }
+
+  .diag-disease {
+    font-size: 15pt !important;
+    font-weight: 800 !important;
+    color: #111111 !important;
+    margin: 1px 0 2px 0 !important;
+  }
+
+  .diag-pathogen {
+    font-size: 9.5pt !important;
+    font-style: italic !important;
+    color: #333333 !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* Confidence bar */
+  .confidence-bar-wrap {
+    margin: 4px 0 8px 0 !important;
+  }
+  .confidence-bar-track {
+    height: 7px !important;
+    border: 1px solid #888888 !important;
+    background: #e0e0e0 !important;
+    border-radius: 2px !important;
+  }
+  .confidence-bar-fill {
+    height: 100% !important;
+    background: #2e7d32 !important;
+  }
+  .confidence-bar-label {
+    font-size: 8.5pt !important;
+    font-weight: 600 !important;
+    color: #222222 !important;
+  }
+
+  /* Symptoms */
+  .dossier-section {
+    margin: 6px 0 !important;
+  }
+  .dossier-subheading {
+    font-size: 9.5pt !important;
+    font-weight: 700 !important;
+    margin-bottom: 2px !important;
+  }
+  .dossier-bullet-item {
+    font-size: 9pt !important;
+    color: #222222 !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Immediate Action Callout */
+  .recommendation {
+    border: 1.5px solid #e65100 !important;
+    background: #fff8e1 !important;
+    padding: 6px 10px !important;
+    border-radius: 4px !important;
+    margin: 8px 0 !important;
+    font-size: 9pt !important;
+    display: block !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 6. Un-hide and Display All Treatment Prescriptions in Print */
+  .prescription-box {
+    margin-top: 8px !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .rx-header {
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    margin-bottom: 4px !important;
+    color: #1b5e20 !important;
+  }
+
+  .rx-pane,
+  .rx-pane.d-none {
+    display: block !important;
+    visibility: visible !important;
+    border: 1px solid #cccccc !important;
+    background: #fdfdfd !important;
+    border-radius: 4px !important;
+    padding: 6px 10px !important;
+    margin-bottom: 6px !important;
+    font-size: 9pt !important;
+  }
+
+  #detail-pane-chem::before {
+    content: "■ Chemical / Fungicide Prescription:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #b71c1c !important;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+  }
+
+  #detail-pane-org::before {
+    content: "■ Organic & Biological Treatment:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #1b5e20 !important;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+  }
+
+  #detail-pane-prev::before {
+    content: "■ Agronomic Prevention & Best Practices:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #0d47a1 !important;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+  }
+
+  .rx-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px 10px !important;
+  }
+
+  /* Technical Specs table */
+  .detail-dl {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
+    border: 1px solid #dddddd !important;
+    background: #f9f9f9 !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    margin-top: 8px !important;
+  }
+
+  .detail-row {
+    border: none !important;
+    padding: 1px 0 !important;
+  }
+
+  .detail-key {
+    font-size: 7.5pt !important;
+    color: #666666 !important;
+    display: block !important;
+  }
+
+  .detail-val {
+    font-size: 8.5pt !important;
+    font-weight: 600 !important;
+    color: #111111 !important;
+  }
+
+  .disclaimer-box {
+    font-size: 7.5pt !important;
+    color: #666666 !important;
+    border-top: 1px solid #e0e0e0 !important;
+    padding-top: 4px !important;
+    margin-top: 6px !important;
+    font-style: italic;
+  }
+
+  /* 7. Official Signatures Footer */
+  .print-official-footer {
+    display: block !important;
+    margin-top: 16px !important;
+    padding-top: 10px !important;
+    border-top: 1.5px solid #222222 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-signatures-wrap {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 10px !important;
+  }
+
+  .print-sig-col {
+    width: 45% !important;
+    text-align: center !important;
+  }
+
+  .print-sig-space {
+    height: 32px !important;
+  }
+
+  .print-sig-line {
+    border-bottom: 1px solid #222222 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .print-sig-label {
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    color: #111111 !important;
+    margin: 0 !important;
+  }
+
+  .print-sig-sub {
+    font-size: 7.5pt !important;
+    color: #666666 !important;
+    display: block !important;
+  }
+
+  .print-audit-bar {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 7pt !important;
+    color: #777777 !important;
+    border-top: 1px dotted #cccccc !important;
+    padding-top: 3px !important;
+  }
+}
+
 
 
