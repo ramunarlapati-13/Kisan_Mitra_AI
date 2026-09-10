@@ -52,3 +52,4 @@ crop_assistant/database/*.db-wal
 *~
 .DS_Store
 Thumbs.db
+~$*

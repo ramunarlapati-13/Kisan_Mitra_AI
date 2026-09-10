@@ -60,10 +60,16 @@
   <!-- Right: Diagnostic Details & Agronomic Prescription -->
   <div class="card detail-info-card" id="detail-info-card">
     <div class="dossier-card-top">
-      <h2 class="card-title">Botanical Pathogen Dossier</h2>
-      <span class="result-badge badge-{{ prediction.status }}">
-        {{ prediction.status|upper }}
-      </span>
+      <div>
+        <h2 class="card-title">Botanical Pathogen Dossier</h2>
+        <span class="card-subtitle-print">Agronomic Action Plan &amp; Treatment Report</span>
+      </div>
+      <div class="header-action-group">
+        <button type="button" class="btn-print-report btn-print-header" onclick="window.print()">🖨️ Print Prescription</button>
+        <span class="result-badge badge-{{ prediction.status }}">
+          {{ prediction.status|upper }}
+        </span>
+      </div>
     </div>
 
     <!-- Main Crop & Disease Heading -->

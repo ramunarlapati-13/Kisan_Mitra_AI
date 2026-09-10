@@ -2049,6 +2049,38 @@ img { max-width: 100%; display: block; }
   display: none;
 }
 
+.card-subtitle-print {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.btn-print-header {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.btn-print-header:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary-emerald);
+}
+
+.header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ==========================================================================
    PROFESSIONAL PRINT STYLESHEET (AGRONOMIC PATHOLOGY & PRESCRIPTION REPORT)
    ========================================================================== */
@@ -2082,7 +2114,7 @@ img { max-width: 100%; display: block; }
     margin: 0 !important;
   }
 
-  /* 2. Hide Web Navigation, Interactive Controls & Shell Chrome */
+  /* 2. Hide Web Navigation, Interactive Controls, Forms & Non-Dossier Sections */
   nav.navbar,
   footer.page-footer,
   .page-header,
@@ -2093,17 +2125,33 @@ img { max-width: 100%; display: block; }
   .nav-actions,
   .back-link,
   .btn-print-report,
+  .btn-print-header,
   .btn-heatmap-toggle,
   .btn-nav,
+  .btn-detail-link,
   .heatmap-overlay,
   .capture-section,
   .sensor-overview,
   .recent-table-card,
+  .history-preview-section,
   .dossier-footer,
   .alerts-feed-card,
   .settings-form,
   .pagination,
-  .table-filters {
+  .table-filters,
+  .diagnosis-input-card,
+  #diagnosis-input-card,
+  .section-title-row,
+  .detail-image-card,
+  #detail-image-card,
+  .dossier-img-wrap,
+  .empty-dossier,
+  .analyze-tabs,
+  .tab-pane,
+  .webcam-box,
+  .webcam-controls,
+  .hardware-cam-box,
+  .analyze-progress {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
@@ -2178,62 +2226,66 @@ img { max-width: 100%; display: block; }
     line-height: 1.35 !important;
   }
 
-  /* 4. Report Grid & Specimen Image */
+  /* 4. Full-Width Container for Diagnostic Dossier & Action Plan */
   .page-main {
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
   }
 
+  .diagnosis-section,
+  .diagnosis-grid,
   .detail-grid {
-    display: grid !important;
-    grid-template-columns: 220px 1fr !important;
-    gap: 14px !important;
-    margin-bottom: 12px !important;
-  }
-
-  .card {
-    border: 1px solid #c0c0c0 !important;
-    background: #ffffff !important;
-    border-radius: 4px !important;
-    padding: 12px !important;
+    display: block !important;
+    width: 100% !important;
     margin: 0 !important;
-    box-shadow: none !important;
+    padding: 0 !important;
   }
 
-  .detail-image-card {
+  .diagnosis-result-card,
+  .detail-info-card {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: 1.5px solid #2e7d32 !important;
+    background: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 14px !important;
+    margin: 0 0 14px 0 !important;
+    box-shadow: none !important;
     page-break-inside: avoid;
     break-inside: avoid;
-    text-align: center;
   }
 
-  .detail-image {
-    max-width: 100% !important;
-    max-height: 200px !important;
-    object-fit: cover !important;
-    border-radius: 4px !important;
-    border: 1px solid #999999 !important;
-  }
-
-  /* 5. Diagnosis Dossier Header */
+  .result-card-header,
   .dossier-card-top {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    margin-bottom: 6px !important;
-    border-bottom: 1px solid #dddddd !important;
-    padding-bottom: 4px !important;
+    margin-bottom: 8px !important;
+    border-bottom: 1.5px solid #2e7d32 !important;
+    padding-bottom: 6px !important;
   }
 
+  .result-card-header .card-title,
   .dossier-card-top .card-title {
-    font-size: 12pt !important;
-    font-weight: 700 !important;
+    font-size: 13pt !important;
+    font-weight: 800 !important;
+    color: #1b5e20 !important;
     margin: 0 !important;
+  }
+
+  .card-subtitle-print {
+    display: block !important;
+    font-size: 9pt !important;
+    font-weight: 600 !important;
+    color: #555555 !important;
+    margin-top: 2px !important;
   }
 
   .result-badge {
     border: 1.5px solid #222222 !important;
-    padding: 2px 6px !important;
+    padding: 2px 8px !important;
     font-size: 8.5pt !important;
     font-weight: 700 !important;
     border-radius: 3px !important;
@@ -2252,18 +2304,38 @@ img { max-width: 100%; display: block; }
     background: #e8f5e9 !important;
   }
 
-  .diag-crop {
-    font-size: 10pt !important;
-    font-weight: 700 !important;
-    color: #555555 !important;
-    text-transform: uppercase !important;
+  /* 5. Crop Diagnosis & Health Metrics */
+  .dossier-hero {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
   }
 
+  .dossier-meta {
+    width: 100% !important;
+  }
+
+  .dossier-crop-title,
+  .dossier-diagnosis-header {
+    margin-bottom: 6px !important;
+  }
+
+  .dossier-crop,
+  .diag-crop {
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    color: #444444 !important;
+    text-transform: uppercase !important;
+    display: block !important;
+  }
+
+  .dossier-disease,
   .diag-disease {
-    font-size: 15pt !important;
+    font-size: 16pt !important;
     font-weight: 800 !important;
     color: #111111 !important;
-    margin: 1px 0 2px 0 !important;
+    margin: 2px 0 !important;
+    display: block !important;
   }
 
   .diag-pathogen {
@@ -2273,35 +2345,81 @@ img { max-width: 100%; display: block; }
     margin-bottom: 6px !important;
   }
 
-  /* Confidence bar */
+  /* Confidence Meter */
+  .conf-meter-group,
   .confidence-bar-wrap {
-    margin: 4px 0 8px 0 !important;
+    margin: 6px 0 10px 0 !important;
   }
+
+  .conf-meter-labels {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 8.5pt !important;
+    font-weight: 600 !important;
+    margin-bottom: 3px !important;
+  }
+
   .confidence-bar-track {
     height: 7px !important;
     border: 1px solid #888888 !important;
     background: #e0e0e0 !important;
     border-radius: 2px !important;
   }
+
   .confidence-bar-fill {
     height: 100% !important;
     background: #2e7d32 !important;
   }
+
   .confidence-bar-label {
     font-size: 8.5pt !important;
     font-weight: 600 !important;
     color: #222222 !important;
   }
 
+  /* Health score dial / risk */
+  .health-score-card {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border: 1px solid #d0d0d0 !important;
+    background: #f9f9f9 !important;
+    border-radius: 4px !important;
+    padding: 6px 14px !important;
+    margin: 6px 0 10px 0 !important;
+  }
+
+  .score-dial {
+    font-size: 12pt !important;
+    font-weight: 800 !important;
+    color: #1b5e20 !important;
+  }
+
+  .score-label {
+    font-size: 8pt !important;
+    color: #666666 !important;
+    display: block !important;
+  }
+
+  .score-risk {
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+  }
+
+  .risk-low { color: #2e7d32 !important; }
+  .risk-high { color: #c62828 !important; }
+
   /* Symptoms */
   .dossier-section {
-    margin: 6px 0 !important;
+    margin: 8px 0 !important;
   }
+
   .dossier-subheading {
     font-size: 9.5pt !important;
     font-weight: 700 !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 3px !important;
   }
+
   .dossier-bullet-item {
     font-size: 9pt !important;
     color: #222222 !important;
@@ -2312,7 +2430,7 @@ img { max-width: 100%; display: block; }
   .recommendation {
     border: 1.5px solid #e65100 !important;
     background: #fff8e1 !important;
-    padding: 6px 10px !important;
+    padding: 8px 12px !important;
     border-radius: 4px !important;
     margin: 8px 0 !important;
     font-size: 9pt !important;
@@ -2321,30 +2439,117 @@ img { max-width: 100%; display: block; }
     break-inside: avoid;
   }
 
-  /* 6. Un-hide and Display All Treatment Prescriptions in Print */
+  /* 6. Agronomic Action Plan & Treatment Prescriptions (All Panes Unhidden) */
   .prescription-box {
-    margin-top: 8px !important;
+    margin-top: 10px !important;
+    border-top: 1.5px solid #2e7d32 !important;
+    padding-top: 8px !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
+  .prescription-header,
   .rx-header {
-    font-size: 10pt !important;
-    font-weight: 700 !important;
-    margin-bottom: 4px !important;
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+    margin-bottom: 8px !important;
+    color: #1b5e20 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .prescription-header h4,
+  .rx-header strong {
+    margin: 0 !important;
+    font-size: 11pt !important;
     color: #1b5e20 !important;
   }
 
+  /* Dashboard index.html Treatment Panes */
+  .rx-content-pane,
+  .rx-content-pane.d-none {
+    display: block !important;
+    visibility: visible !important;
+    border: 1px solid #cccccc !important;
+    background: #fafafa !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 8px !important;
+    font-size: 9pt !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  #rx-pane-immediate::before {
+    content: "⚡ Immediate Farm Action:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #e65100 !important;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  #rx-pane-chemical::before {
+    content: "🧪 Recommended Chemical Fungicide Prescription:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #b71c1c !important;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  #rx-pane-organic::before {
+    content: "🍃 Organic & Biological Crop Protection:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #1b5e20 !important;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  #rx-pane-prevention::before {
+    content: "🛡️ Preventive Agronomic Best Practices:";
+    display: block;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #0d47a1 !important;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  .rx-detail-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px 12px !important;
+  }
+
+  .rx-bullet-list {
+    margin: 0 !important;
+    padding-left: 18px !important;
+  }
+
+  .rx-bullet-list li {
+    font-size: 9pt !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Scan Details image.html Treatment Panes */
   .rx-pane,
   .rx-pane.d-none {
     display: block !important;
     visibility: visible !important;
     border: 1px solid #cccccc !important;
-    background: #fdfdfd !important;
+    background: #fafafa !important;
     border-radius: 4px !important;
-    padding: 6px 10px !important;
-    margin-bottom: 6px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 8px !important;
     font-size: 9pt !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   #detail-pane-chem::before {
@@ -2353,7 +2558,7 @@ img { max-width: 100%; display: block; }
     font-weight: 700;
     font-size: 8.5pt;
     color: #b71c1c !important;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     text-transform: uppercase;
   }
 
@@ -2363,7 +2568,7 @@ img { max-width: 100%; display: block; }
     font-weight: 700;
     font-size: 8.5pt;
     color: #1b5e20 !important;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     text-transform: uppercase;
   }
 
@@ -2373,7 +2578,7 @@ img { max-width: 100%; display: block; }
     font-weight: 700;
     font-size: 8.5pt;
     color: #0d47a1 !important;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     text-transform: uppercase;
   }
 
@@ -2381,6 +2586,44 @@ img { max-width: 100%; display: block; }
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 4px 10px !important;
+  }
+
+  /* 7. On-Field Farmer Action Checklist */
+  .treatment-checklist {
+    border: 1px solid #bbbbbb !important;
+    background: #fdfdfd !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    margin-top: 10px !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .treatment-checklist h5 {
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    margin: 0 0 6px 0 !important;
+    text-transform: uppercase;
+    color: #222222 !important;
+  }
+
+  .checklist-item {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 8.5pt !important;
+    margin-bottom: 4px !important;
+    color: #222222 !important;
+  }
+
+  .checklist-item input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 12px !important;
+    height: 12px !important;
+    border: 1.5px solid #333333 !important;
+    border-radius: 2px !important;
+    margin-right: 8px !important;
+    display: inline-block !important;
   }
 
   /* Technical Specs table */
@@ -2421,7 +2664,7 @@ img { max-width: 100%; display: block; }
     font-style: italic;
   }
 
-  /* 7. Official Signatures Footer */
+  /* 8. Official Signatures Footer */
   .print-official-footer {
     display: block !important;
     margin-top: 16px !important;
