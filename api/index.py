@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.parse
 
 # 1. Resolve path locations
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,30 +24,29 @@ if "api" in sys.modules and not hasattr(sys.modules["api"], "routes"):
 from app import app
 
 # 5. Vercel Path Middleware
-# When Vercel rewrites requests to /api/index, PATH_INFO in WSGI is set to /api/index.
-# This middleware restores the true incoming path requested by the browser.
+# When Vercel rewrites requests to /api/index?__vercel_path=$1, this middleware
+# dynamically restores the true original route requested by the browser.
 class VercelPathMiddleware:
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        path = environ.get("PATH_INFO", "")
-        if path in ("/api/index", "/api/index.py", "/api/index/"):
-            # Check headers injected by Vercel's edge routing for the original path
-            orig = (
-                environ.get("HTTP_X_FORWARDED_PATH") or
-                environ.get("HTTP_X_VERCEL_FORWARDED_PATH") or
-                environ.get("HTTP_X_MATCHED_PATH") or
-                environ.get("REQUEST_URI") or
-                environ.get("RAW_URI") or
-                "/"
-            )
-            # Strip query string if present
-            if "?" in orig:
-                orig = orig.split("?")[0]
-            if orig in ("/api/index", "/api/index.py", "/api/index/"):
-                orig = "/"
-            environ["PATH_INFO"] = orig
+        query_string = environ.get("QUERY_STRING", "")
+        if "__vercel_path=" in query_string:
+            try:
+                parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+                if "__vercel_path" in parsed:
+                    raw_path = parsed["__vercel_path"][0]
+                    clean_path = "/" + raw_path.lstrip("/")
+                    environ["PATH_INFO"] = clean_path
+
+                    # Filter out __vercel_path from QUERY_STRING so request.args stays clean
+                    filtered = [
+                        (k, v) for k, vs in parsed.items() if k != "__vercel_path" for v in vs
+                    ]
+                    environ["QUERY_STRING"] = urllib.parse.urlencode(filtered)
+            except Exception:
+                pass
         return self.wsgi_app(environ, start_response)
 
 app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
